@@ -15,280 +15,160 @@ async function sb(path, opts = {}) {
     },
     ...opts,
   });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(err);
-  }
+  if (!res.ok) throw new Error(await res.text());
   return res.status === 204 ? null : res.json();
 }
 
 const get = (path, q = "") => sb(`${path}?${q}`);
-const patch = (path, q, body) =>
-  sb(`${path}?${q}`, { method: "PATCH", body: JSON.stringify(body) });
+const patch = (path, q, body) => sb(`${path}?${q}`, { method: "PATCH", body: JSON.stringify(body) });
 
-function cn(...args) {
-  return args.filter(Boolean).join(" ");
-}
-
-function fmt(n, currency = "INR") {
+function fmt(n) {
   if (n == null) return "—";
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0,
-  }).format(n);
+  return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
 }
-
 function fmtNum(n) {
   if (n == null) return "—";
   return new Intl.NumberFormat("en-IN").format(n);
 }
-
 function fmtDate(d) {
   if (!d) return "—";
-  return new Date(d).toLocaleString("en-IN", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return new Date(d).toLocaleString("en-IN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 }
-
 function timeAgo(d) {
   if (!d) return "—";
-  const secs = Math.floor((Date.now() - new Date(d)) / 1000);
-  if (secs < 60) return `${secs}s ago`;
-  if (secs < 3600) return `${Math.floor(secs / 60)}m ago`;
-  if (secs < 86400) return `${Math.floor(secs / 3600)}h ago`;
-  return `${Math.floor(secs / 86400)}d ago`;
+  const s = Math.floor((Date.now() - new Date(d)) / 1000);
+  if (s < 60) return s + "s ago";
+  if (s < 3600) return Math.floor(s / 60) + "m ago";
+  if (s < 86400) return Math.floor(s / 3600) + "h ago";
+  return Math.floor(s / 86400) + "d ago";
 }
 
-// ─── Icons ────────────────────────────────────────────────────────────────────
-const icons = {
-  dashboard: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4">
-      <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" />
-      <rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" />
-    </svg>
-  ),
-  restaurants: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4">
-      <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" /><polyline points="9,22 9,12 15,12 15,22" />
-    </svg>
-  ),
-  orders: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4">
-      <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" /><line x1="3" y1="6" x2="21" y2="6" />
-      <path d="M16 10a4 4 0 01-8 0" />
-    </svg>
-  ),
-  payments: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4">
-      <rect x="1" y="4" width="22" height="16" rx="2" /><line x1="1" y1="10" x2="23" y2="10" />
-    </svg>
-  ),
-  feedback: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4">
-      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-    </svg>
-  ),
-  qr: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4">
-      <rect x="3" y="3" width="5" height="5" /><rect x="16" y="3" width="5" height="5" />
-      <rect x="3" y="16" width="5" height="5" /><rect x="11" y="11" width="2" height="2" />
-      <rect x="15" y="11" width="2" height="2" /><rect x="19" y="11" width="2" height="2" />
-      <rect x="11" y="15" width="2" height="2" /><rect x="15" y="15" width="2" height="2" />
-      <rect x="19" y="19" width="2" height="2" />
-    </svg>
-  ),
-  alerts: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4">
-      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-      <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
-    </svg>
-  ),
-  settings: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4">
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
-    </svg>
-  ),
-  menu: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4">
-      <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
-    </svg>
-  ),
-  refresh: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4">
-      <polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" />
-      <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
-    </svg>
-  ),
-  check: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  ),
-  x: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
-      <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  ),
-  eye: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4">
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
-    </svg>
-  ),
-  trend: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4">
-      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" /><polyline points="16 7 22 7 22 13" />
-    </svg>
-  ),
-  star: (
-    <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-    </svg>
-  ),
-  users: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4">
-      <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" />
-      <path d="M23 21v-2a4 4 0 00-3-3.87" /><path d="M16 3.13a4 4 0 010 7.75" />
-    </svg>
-  ),
-  dollar: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4">
-      <line x1="12" y1="1" x2="12" y2="23" />
-      <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
-    </svg>
-  ),
-  activity: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4">
-      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-    </svg>
-  ),
-  table: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4">
-      <rect x="3" y="3" width="18" height="18" rx="2" />
-      <line x1="3" y1="9" x2="21" y2="9" /><line x1="3" y1="15" x2="21" y2="15" />
-      <line x1="9" y1="3" x2="9" y2="21" />
-    </svg>
-  ),
-  zap: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4">
-      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-    </svg>
-  ),
+// ── SVG Icons ──────────────────────────────────────────────────────────────────
+const Icon = ({ d, size = 16, fill = "none", children }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    {d ? <path d={d} /> : children}
+  </svg>
+);
+
+const Icons = {
+  dashboard:   <Icon><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></Icon>,
+  restaurants: <Icon d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"><polyline points="9,22 9,12 15,12 15,22"/></Icon>,
+  orders:      <Icon><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></Icon>,
+  payments:    <Icon><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></Icon>,
+  feedback:    <Icon d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>,
+  qr:          <Icon><rect x="3" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/><rect x="3" y="16" width="5" height="5"/><path d="M11 11h2v2h-2zM15 11h2v2h-2zM19 11h2v2h-2zM11 15h2v2h-2zM15 15h2v2h-2zM19 19h2v2h-2z"/></Icon>,
+  alerts:      <Icon><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></Icon>,
+  settings:    <Icon><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></Icon>,
+  menu:        <Icon><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></Icon>,
+  refresh:     <Icon><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></Icon>,
+  x:           <Icon><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></Icon>,
+  star:        <Icon fill="currentColor" d="M0 0"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></Icon>,
+  trend:       <Icon><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></Icon>,
+  dollar:      <Icon><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></Icon>,
+  activity:    <Icon><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></Icon>,
+  table:       <Icon><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></Icon>,
+  zap:         <Icon fill="currentColor" d="M0 0"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></Icon>,
+  check:       <Icon><polyline points="20 6 9 17 4 12"/></Icon>,
 };
 
-// ─── Sparkline ────────────────────────────────────────────────────────────────
-function Sparkline({ data = [], color = "#f97316" }) {
-  if (!data.length) return null;
-  const max = Math.max(...data, 1);
-  const min = Math.min(...data, 0);
-  const range = max - min || 1;
-  const w = 80, h = 28;
-  const pts = data.map((v, i) => {
-    const x = (i / (data.length - 1)) * w;
-    const y = h - ((v - min) / range) * h;
-    return `${x},${y}`;
-  });
-  return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
-      <polyline fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" points={pts.join(" ")} />
-    </svg>
-  );
-}
-
-// ─── Stat Card ────────────────────────────────────────────────────────────────
-function StatCard({ label, value, sub, icon, color = "orange", sparkData }) {
-  const colors = {
-    orange: { bg: "bg-orange-500/10", border: "border-orange-500/20", text: "text-orange-400", spark: "#f97316" },
-    emerald: { bg: "bg-emerald-500/10", border: "border-emerald-500/20", text: "text-emerald-400", spark: "#10b981" },
-    indigo: { bg: "bg-indigo-500/10", border: "border-indigo-500/20", text: "text-indigo-400", spark: "#6366f1" },
-    rose: { bg: "bg-rose-500/10", border: "border-rose-500/20", text: "text-rose-400", spark: "#f43f5e" },
-    amber: { bg: "bg-amber-500/10", border: "border-amber-500/20", text: "text-amber-400", spark: "#f59e0b" },
-    violet: { bg: "bg-violet-500/10", border: "border-violet-500/20", text: "text-violet-400", spark: "#8b5cf6" },
-  };
-  const c = colors[color] || colors.orange;
-  return (
-    <div className="glass rounded-2xl p-5 space-y-3 hover:bg-white/[0.05] transition-all">
-      <div className="flex items-center justify-between">
-        <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#6B6B9A]">{label}</p>
-        <div className={cn("w-8 h-8 rounded-xl border flex items-center justify-center", c.bg, c.border)}>
-          <span className={c.text}>{icon}</span>
-        </div>
-      </div>
-      <div className="flex items-end justify-between">
-        <div>
-          <p className="text-2xl font-bold text-[#F0F0FF] font-mono">{value}</p>
-          {sub && <p className="text-xs text-[#6B6B9A] mt-0.5">{sub}</p>}
-        </div>
-        {sparkData && <Sparkline data={sparkData} color={c.spark} />}
-      </div>
-    </div>
-  );
-}
-
-// ─── Badge ────────────────────────────────────────────────────────────────────
+// ── Primitives ─────────────────────────────────────────────────────────────────
 function Badge({ color = "gray", children }) {
-  const m = {
-    green: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
-    orange: "bg-orange-500/15 text-orange-400 border-orange-500/20",
-    red: "bg-red-500/15 text-red-400 border-red-500/20",
-    indigo: "bg-indigo-500/15 text-indigo-400 border-indigo-500/20",
-    amber: "bg-amber-500/15 text-amber-400 border-amber-500/20",
-    gray: "bg-white/5 text-[#6B6B9A] border-white/10",
-    violet: "bg-violet-500/15 text-violet-400 border-violet-500/20",
-    rose: "bg-rose-500/15 text-rose-400 border-rose-500/20",
-  };
-  return (
-    <span className={cn("inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border", m[color] || m.gray)}>
-      {children}
-    </span>
-  );
+  return <span className={"badge badge-" + color}>{children}</span>;
 }
 
-// ─── Toast ────────────────────────────────────────────────────────────────────
+function Loader() {
+  return <div className="loader-wrap"><div className="spinner" /></div>;
+}
+
+function Empty({ text = "No data" }) {
+  return <div className="empty">{text}</div>;
+}
+
 function useToasts() {
   const [toasts, setToasts] = useState([]);
   const add = useCallback((msg, type = "success") => {
     const id = Date.now();
-    setToasts((p) => [...p.slice(-3), { id, msg, type }]);
-    setTimeout(() => setToasts((p) => p.filter((t) => t.id !== id)), 3500);
+    setToasts(p => [...p.slice(-3), { id, msg, type }]);
+    setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 3500);
   }, []);
   return { toasts, toast: add };
 }
 
 function Toasts({ toasts }) {
-  const colors = {
-    success: "border-emerald-500/30 text-emerald-400",
-    error: "border-red-500/30 text-red-400",
-    info: "border-indigo-500/30 text-indigo-400",
-  };
   return (
-    <div className="fixed bottom-6 right-6 z-50 space-y-2 pointer-events-none">
-      {toasts.map((t) => (
-        <div key={t.id} className={cn("px-4 py-3 rounded-xl border bg-[#0E0E1C]/95 backdrop-blur text-sm font-medium shadow-2xl min-w-[280px]", colors[t.type] || colors.info)}>
-          {t.msg}
+    <div className="toast-wrap">
+      {toasts.map(t => <div key={t.id} className={"toast " + t.type}>{t.msg}</div>)}
+    </div>
+  );
+}
+
+// ── Sparkline ──────────────────────────────────────────────────────────────────
+function Sparkline({ data = [], color = "#F4793A", h = 32 }) {
+  if (data.length < 2) return null;
+  const max = Math.max(...data, 1), min = Math.min(...data, 0), range = max - min || 1;
+  const W = 72;
+  const pts = data.map((v, i) => ((i / (data.length - 1)) * W) + "," + (h - ((v - min) / range) * h)).join(" ");
+  return (
+    <svg width={W} height={h} viewBox={`0 0 ${W} ${h}`} style={{ overflow: "visible" }}>
+      <polyline fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" points={pts} />
+    </svg>
+  );
+}
+
+// ── Stat Card ──────────────────────────────────────────────────────────────────
+function StatCard({ label, value, sub, icon, color = "orange", spark }) {
+  const sparkColor = { orange: "#F4793A", green: "#2DD4A0", blue: "#5B8EF4", amber: "#F5A623", violet: "#9B6CF7", rose: "#F45B6C" }[color] || "#F4793A";
+  return (
+    <div className={"stat-card " + color}>
+      <div className="stat-icon">{icon}</div>
+      <div className="stat-label">{label}</div>
+      <div className="stat-value">{value}</div>
+      {sub && <div className="stat-sub">{sub}</div>}
+      {spark && (
+        <div style={{ marginTop: 10 }}>
+          <Sparkline data={spark} color={sparkColor} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Bar Chart ──────────────────────────────────────────────────────────────────
+function BarChart({ data, color = "#F4793A", labels }) {
+  const max = Math.max(...data, 1);
+  return (
+    <div className="bar-chart">
+      {data.map((v, i) => (
+        <div key={i} className="bar-col">
+          <div className="bar-fill" style={{ height: Math.max((v / max) * 100, 2) + "%", background: color, opacity: 0.7 }}>
+            <div className="tooltip">{typeof v === "number" && v > 100 ? fmt(v) : fmtNum(v)}</div>
+          </div>
+          <div className="bar-label">{labels?.[i] || (i + 1)}</div>
         </div>
       ))}
     </div>
   );
 }
 
-function Loader() {
+// ── Section wrapper ────────────────────────────────────────────────────────────
+function Page({ title, sub, actions, children }) {
   return (
-    <div className="flex items-center justify-center h-48">
-      <div className="w-7 h-7 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+    <div className="animate-in">
+      <div className="section-header">
+        <div>
+          <h1 className="section-title">{title}</h1>
+          {sub && <p style={{ fontSize: 12, color: "var(--text3)", marginTop: 3 }}>{sub}</p>}
+        </div>
+        {actions && <div style={{ display: "flex", gap: 8 }}>{actions}</div>}
+      </div>
+      {children}
     </div>
   );
 }
 
-function Empty({ text }) {
-  return <div className="flex items-center justify-center h-32 text-sm text-[#4A4A6A]">{text}</div>;
-}
-
-// ─── Dashboard ────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// DASHBOARD
+// ─────────────────────────────────────────────────────────────────────────────
 function Dashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -302,185 +182,143 @@ function Dashboard() {
         get("feedback", "select=id,rating,created_at"),
         get("tables", "select=id,restaurant_id"),
       ]);
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const todayOrders = orders.filter((o) => new Date(o.created_at) >= today);
-      const paidOrders = orders.filter((o) => o.status === "paid");
-      const todayPaid = todayOrders.filter((o) => o.status === "paid");
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const paid = orders.filter(o => o.status === "paid");
+      const todayAll = orders.filter(o => new Date(o.created_at) >= today);
+      const todayPaid = todayAll.filter(o => o.status === "paid");
       const avgRating = feedback.length ? feedback.reduce((s, f) => s + f.rating, 0) / feedback.length : 0;
-
+      const DAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
       const revByDay = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(); d.setDate(d.getDate() - (6 - i)); d.setHours(0, 0, 0, 0);
-        const next = new Date(d); next.setDate(next.getDate() + 1);
-        return paidOrders
-          .filter((o) => { const c = new Date(o.created_at); return c >= d && c < next; })
-          .reduce((s, o) => s + Number(o.total), 0);
+        const d = new Date(); d.setDate(d.getDate() - (6 - i)); d.setHours(0,0,0,0);
+        const n = new Date(d); n.setDate(n.getDate() + 1);
+        return paid.filter(o => { const c = new Date(o.created_at); return c >= d && c < n; }).reduce((s, o) => s + +o.total, 0);
       });
-
       const ordByDay = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(); d.setDate(d.getDate() - (6 - i)); d.setHours(0, 0, 0, 0);
-        const next = new Date(d); next.setDate(next.getDate() + 1);
-        return orders.filter((o) => { const c = new Date(o.created_at); return c >= d && c < next; }).length;
+        const d = new Date(); d.setDate(d.getDate() - (6 - i)); d.setHours(0,0,0,0);
+        const n = new Date(d); n.setDate(n.getDate() + 1);
+        return orders.filter(o => { const c = new Date(o.created_at); return c >= d && c < n; }).length;
       });
-
-      const activeSessions = orders.filter((o) => o.status === "open" || o.status === "bill_requested").length;
-
+      const dayLabels = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(); d.setDate(d.getDate() - (6 - i));
+        return DAYS[d.getDay()];
+      });
       setData({
-        totalRestaurants: restaurants.length,
-        activeRestaurants: restaurants.filter((r) => r.is_operational).length,
-        totalOrders: orders.length,
-        todayOrders: todayOrders.length,
-        totalRevenue: paidOrders.reduce((s, o) => s + Number(o.total), 0),
-        todayRevenue: todayPaid.reduce((s, o) => s + Number(o.total), 0),
-        avgRating,
-        totalFeedback: feedback.length,
-        totalTables: tables.length,
-        activeSessions,
-        revByDay,
-        ordByDay,
+        totalR: restaurants.length, activeR: restaurants.filter(r => r.is_operational).length,
+        totalOrders: orders.length, todayOrders: todayAll.length,
+        totalRev: paid.reduce((s, o) => s + +o.total, 0),
+        todayRev: todayPaid.reduce((s, o) => s + +o.total, 0),
+        avgRating, totalFb: feedback.length, totalTables: tables.length,
+        activeSessions: orders.filter(o => o.status === "open" || o.status === "bill_requested").length,
+        revByDay, ordByDay, dayLabels,
       });
     } catch (e) { console.error(e); }
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    load();
-    const t = setInterval(load, 30000);
-    return () => clearInterval(t);
-  }, [load]);
+  useEffect(() => { load(); const t = setInterval(load, 30000); return () => clearInterval(t); }, [load]);
 
   if (loading) return <Loader />;
-  if (!data) return <Empty text="Failed to load dashboard data" />;
-
-  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  if (!data) return <Empty text="Failed to load" />;
 
   return (
-    <div className="space-y-6 animate-fade-up">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[#F0F0FF]">Command Center</h1>
-          <p className="text-sm text-[#6B6B9A] mt-0.5">OrbitDine platform overview · Live</p>
-        </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+    <Page title="Command Center" sub="Live platform overview across all restaurants"
+      actions={
+        <div style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 14px", borderRadius:20, background:"rgba(45,212,160,0.1)", border:"1px solid rgba(45,212,160,0.2)", fontSize:12, fontWeight:600, color:"var(--green)" }}>
+          <span className="live-dot" />
           {data.activeSessions} live sessions
         </div>
+      }>
+
+      <div className="stat-grid mb-4">
+        <StatCard label="Restaurants" value={data.totalR} sub={data.activeR + " active"} icon={Icons.restaurants} color="orange" />
+        <StatCard label="Today's Orders" value={fmtNum(data.todayOrders)} sub={fmtNum(data.totalOrders) + " total"} icon={Icons.orders} color="blue" spark={data.ordByDay} />
+        <StatCard label="Today's Revenue" value={fmt(data.todayRev)} sub={fmt(data.totalRev) + " all-time"} icon={Icons.dollar} color="green" spark={data.revByDay} />
+        <StatCard label="Avg Rating" value={data.avgRating.toFixed(2) + " ★"} sub={fmtNum(data.totalFb) + " reviews"} icon={Icons.star} color="amber" />
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Restaurants" value={data.totalRestaurants} sub={`${data.activeRestaurants} active`} icon={icons.restaurants} color="orange" />
-        <StatCard label="Today's Orders" value={fmtNum(data.todayOrders)} sub={`${fmtNum(data.totalOrders)} total`} icon={icons.orders} color="indigo" sparkData={data.ordByDay} />
-        <StatCard label="Today's GMV" value={fmt(data.todayRevenue)} sub={`${fmt(data.totalRevenue)} all-time`} icon={icons.dollar} color="emerald" sparkData={data.revByDay} />
-        <StatCard label="Avg Rating" value={data.avgRating.toFixed(2) + " ★"} sub={`${fmtNum(data.totalFeedback)} reviews`} icon={icons.star} color="amber" />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="glass rounded-2xl p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-[#F0F0FF]">Revenue — Last 7 Days</h2>
-            <span className="text-xs text-[#6B6B9A]">{fmt(data.revByDay.reduce((a, b) => a + b, 0))} total</span>
+      <div className="grid-2 mb-4">
+        <div className="card">
+          <div className="flex items-center justify-between mb-3">
+            <p style={{ fontSize:13, fontWeight:700, color:"var(--text)", fontFamily:"Syne, sans-serif" }}>Revenue — Last 7 Days</p>
+            <span style={{ fontSize:11, color:"var(--text3)", fontFamily:"DM Mono, monospace" }}>{fmt(data.revByDay.reduce((a,b)=>a+b,0))}</span>
           </div>
-          <div className="flex items-end gap-2 h-32">
-            {data.revByDay.map((v, i) => {
-              const max = Math.max(...data.revByDay, 1);
-              const d = new Date(); d.setDate(d.getDate() - (6 - i));
-              return (
-                <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                  <div className="w-full rounded-t-lg bg-orange-500/20 hover:bg-orange-500/40 transition-all relative group" style={{ height: `${(v / max) * 100}%`, minHeight: 4 }}>
-                    <div className="absolute -top-7 left-1/2 -translate-x-1/2 hidden group-hover:block bg-[#1A1A2E] border border-white/10 px-2 py-1 rounded-lg text-[10px] text-white whitespace-nowrap z-10">
-                      {fmt(v)}
-                    </div>
-                  </div>
-                  <span className="text-[9px] text-[#4A4A6A]">{days[d.getDay()]}</span>
-                </div>
-              );
-            })}
-          </div>
+          <BarChart data={data.revByDay} color="var(--accent)" labels={data.dayLabels} />
         </div>
-
-        <div className="glass rounded-2xl p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-[#F0F0FF]">Orders — Last 7 Days</h2>
-            <span className="text-xs text-[#6B6B9A]">{fmtNum(data.ordByDay.reduce((a, b) => a + b, 0))} total</span>
+        <div className="card">
+          <div className="flex items-center justify-between mb-3">
+            <p style={{ fontSize:13, fontWeight:700, color:"var(--text)", fontFamily:"Syne, sans-serif" }}>Orders — Last 7 Days</p>
+            <span style={{ fontSize:11, color:"var(--text3)", fontFamily:"DM Mono, monospace" }}>{fmtNum(data.ordByDay.reduce((a,b)=>a+b,0))} orders</span>
           </div>
-          <div className="flex items-end gap-2 h-32">
-            {data.ordByDay.map((v, i) => {
-              const max = Math.max(...data.ordByDay, 1);
-              return (
-                <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                  <div className="w-full rounded-t-lg bg-indigo-500/20 hover:bg-indigo-500/40 transition-all" style={{ height: `${(v / max) * 100}%`, minHeight: 4 }} />
-                  <span className="text-[9px] text-[#4A4A6A]">{i + 1}</span>
-                </div>
-              );
-            })}
-          </div>
+          <BarChart data={data.ordByDay} color="var(--blue)" labels={data.dayLabels} />
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
-        <div className="glass rounded-2xl p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-violet-500/15 border border-violet-500/20 flex items-center justify-center text-violet-400">{icons.table}</div>
-          <div><p className="text-xs text-[#6B6B9A]">Total Tables</p><p className="text-lg font-bold text-[#F0F0FF]">{fmtNum(data.totalTables)}</p></div>
-        </div>
-        <div className="glass rounded-2xl p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center text-emerald-400">{icons.activity}</div>
-          <div><p className="text-xs text-[#6B6B9A]">Live Sessions</p><p className="text-lg font-bold text-[#F0F0FF]">{fmtNum(data.activeSessions)}</p></div>
-        </div>
-        <div className="glass rounded-2xl p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-orange-500/15 border border-orange-500/20 flex items-center justify-center text-orange-400">{icons.zap}</div>
-          <div><p className="text-xs text-[#6B6B9A]">Avg Order Value</p><p className="text-lg font-bold text-[#F0F0FF]">{fmt(data.totalRevenue / Math.max(data.totalOrders, 1))}</p></div>
-        </div>
+      <div className="grid-3">
+        {[
+          { label:"Total Tables", val: fmtNum(data.totalTables), color:"var(--violet)", icon: Icons.table },
+          { label:"Live Sessions", val: fmtNum(data.activeSessions), color:"var(--green)", icon: Icons.activity },
+          { label:"Avg Order Value", val: fmt(data.totalRev / Math.max(data.totalOrders, 1)), color:"var(--accent)", icon: Icons.zap },
+        ].map(s => (
+          <div key={s.label} className="card flex items-center gap-3">
+            <div style={{ width:40, height:40, borderRadius:12, background:"rgba(255,255,255,0.04)", border:"1px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"center", color: s.color, flexShrink:0 }}>
+              {s.icon}
+            </div>
+            <div>
+              <p style={{ fontSize:11, color:"var(--text3)", marginBottom:2 }}>{s.label}</p>
+              <p style={{ fontSize:18, fontWeight:700, fontFamily:"Syne, sans-serif", color:"var(--text)" }}>{s.val}</p>
+            </div>
+          </div>
+        ))}
       </div>
-    </div>
+    </Page>
   );
 }
 
-// ─── Restaurants ──────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// RESTAURANTS
+// ─────────────────────────────────────────────────────────────────────────────
 function Restaurants({ toast }) {
-  const [restaurants, setRestaurants] = useState([]);
+  const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
-  const [filter, setFilter] = useState("all");
-  const [search, setSearch] = useState("");
   const [detail, setDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [filter, setFilter] = useState("all");
+  const [search, setSearch] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const [rests, orders, tables, feedback] = await Promise.all([
-        get("restaurants", "select=id,name,is_operational,theme,created_at,owner_id,currency,address"),
+        get("restaurants", "select=id,name,is_operational,theme,created_at,currency,address"),
         get("orders", "select=id,total,status,created_at,restaurant_id"),
         get("tables", "select=id,restaurant_id"),
         get("feedback", "select=id,rating,restaurant_id"),
       ]);
-      const today = new Date(); today.setHours(0, 0, 0, 0);
-      const enriched = rests.map((r) => {
-        const ro = orders.filter((o) => o.restaurant_id === r.id);
-        const todayRo = ro.filter((o) => new Date(o.created_at) >= today);
-        const paidRo = ro.filter((o) => o.status === "paid");
-        const rf = feedback.filter((f) => f.restaurant_id === r.id);
-        const avgR = rf.length ? rf.reduce((s, f) => s + f.rating, 0) / rf.length : 0;
+      const today = new Date(); today.setHours(0,0,0,0);
+      const enriched = rests.map(r => {
+        const ro = orders.filter(o => o.restaurant_id === r.id);
+        const todayRo = ro.filter(o => new Date(o.created_at) >= today);
+        const paidRo = ro.filter(o => o.status === "paid");
+        const rf = feedback.filter(f => f.restaurant_id === r.id);
         return {
           ...r,
           todayOrders: todayRo.length,
-          todayRevenue: todayRo.filter((o) => o.status === "paid").reduce((s, o) => s + Number(o.total), 0),
-          totalRevenue: paidRo.reduce((s, o) => s + Number(o.total), 0),
+          todayRev: todayRo.filter(o => o.status === "paid").reduce((s,o) => s + +o.total, 0),
+          totalRev: paidRo.reduce((s,o) => s + +o.total, 0),
           totalOrders: ro.length,
-          tableCount: tables.filter((t) => t.restaurant_id === r.id).length,
-          avgRating: avgR,
-          lastOrder: ro.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0]?.created_at,
+          tableCount: tables.filter(t => t.restaurant_id === r.id).length,
+          avgRating: rf.length ? rf.reduce((s,f) => s + f.rating, 0) / rf.length : 0,
+          lastOrder: ro.sort((a,b) => new Date(b.created_at) - new Date(a.created_at))[0]?.created_at,
         };
       });
-      setRestaurants(enriched.sort((a, b) => b.totalRevenue - a.totalRevenue));
+      setList(enriched.sort((a,b) => b.totalRev - a.totalRev));
     } catch (e) { toast(e.message, "error"); }
     setLoading(false);
   }, [toast]);
 
   const loadDetail = useCallback(async (r) => {
-    setSelected(r);
-    setDetailLoading(true);
+    setSelected(r); setDetailLoading(true); setDetail(null);
     try {
       const [orders, tables, feedback, managers] = await Promise.all([
         get("orders", `select=id,total,status,created_at,order_items(id,name,price,quantity)&restaurant_id=eq.${r.id}&order=created_at.desc&limit=20`),
@@ -493,17 +331,17 @@ function Restaurants({ toast }) {
     setDetailLoading(false);
   }, [toast]);
 
-  const toggleOperational = useCallback(async (r) => {
+  const toggleOp = useCallback(async (r) => {
     try {
       await patch("restaurants", `id=eq.${r.id}`, { is_operational: !r.is_operational });
-      toast(`Restaurant ${r.is_operational ? "suspended" : "reactivated"}`, "success");
+      toast(`${r.name} ${r.is_operational ? "suspended" : "reactivated"}`, "success");
       load();
     } catch (e) { toast(e.message, "error"); }
   }, [toast, load]);
 
   useEffect(() => { load(); }, [load]);
 
-  const filtered = restaurants.filter((r) => {
+  const filtered = list.filter(r => {
     if (filter === "active" && !r.is_operational) return false;
     if (filter === "inactive" && r.is_operational) return false;
     if (search && !r.name.toLowerCase().includes(search.toLowerCase())) return false;
@@ -513,156 +351,130 @@ function Restaurants({ toast }) {
   if (loading) return <Loader />;
 
   return (
-    <div className="flex gap-6 h-full">
-      <div className={cn("flex flex-col space-y-4 transition-all", selected ? "w-1/2" : "w-full")}>
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-[#F0F0FF]">Restaurants</h1>
-            <p className="text-xs text-[#6B6B9A]">{filtered.length} restaurants</p>
-          </div>
-          <button onClick={load} className="p-2 text-[#6B6B9A] hover:text-white hover:bg-white/5 rounded-lg transition-all">{icons.refresh}</button>
-        </div>
-
-        <div className="flex gap-2">
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search restaurants…"
-            className="flex-1 px-3.5 py-2 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-[#F0F0FF] placeholder-[#3A3A5C] focus:outline-none focus:border-orange-500/50" />
-          {["all", "active", "inactive"].map((f) => (
-            <button key={f} onClick={() => setFilter(f)}
-              className={cn("px-3 py-2 rounded-xl text-xs font-semibold border capitalize transition-all",
-                filter === f ? "bg-orange-500/20 border-orange-500/30 text-orange-400" : "bg-white/[0.03] border-white/[0.07] text-[#6B6B9A] hover:bg-white/[0.07]")}>
-              {f}
-            </button>
+    <Page title="Restaurants" sub={filtered.length + " restaurants"} actions={<button className="icon-btn" onClick={load}>{Icons.refresh}</button>}>
+      <div className="flex items-center gap-2 mb-4">
+        <input className="input" style={{ maxWidth: 280 }} placeholder="Search restaurants…" value={search} onChange={e => setSearch(e.target.value)} />
+        <div className="filter-tabs">
+          {["all","active","inactive"].map(f => (
+            <button key={f} className={"filter-tab" + (filter===f?" active":"")} onClick={() => setFilter(f)}>{f.charAt(0).toUpperCase()+f.slice(1)}</button>
           ))}
-        </div>
-
-        <div className="space-y-2 overflow-y-auto flex-1" style={{ maxHeight: "calc(100vh - 280px)" }}>
-          {filtered.map((r) => (
-            <div key={r.id} onClick={() => loadDetail(r)}
-              className={cn("glass rounded-xl p-4 cursor-pointer hover:bg-white/[0.07] transition-all border",
-                selected?.id === r.id ? "border-orange-500/40 bg-orange-500/5" : "border-transparent")}>
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0",
-                    r.is_operational ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400")}>
-                    {r.name[0]}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-[#F0F0FF] truncate">{r.name}</p>
-                    <p className="text-[10px] text-[#6B6B9A]">{r.tableCount} tables · {fmtNum(r.totalOrders)} orders</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <div className="text-right">
-                    <p className="text-sm font-bold text-[#F0F0FF]">{fmt(r.todayRevenue)}</p>
-                    <p className="text-[10px] text-[#6B6B9A]">today</p>
-                  </div>
-                  <Badge color={r.is_operational ? "green" : "red"}>{r.is_operational ? "Active" : "Off"}</Badge>
-                </div>
-              </div>
-              <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-white/[0.05]">
-                <div className="flex items-center gap-3 text-[10px] text-[#6B6B9A]">
-                  <span>{fmtNum(r.todayOrders)} today</span>
-                  <span>·</span>
-                  <span>{fmt(r.totalRevenue)} total</span>
-                  {r.avgRating > 0 && <><span>·</span><span className="text-amber-400">★ {r.avgRating.toFixed(1)}</span></>}
-                </div>
-                <p className="text-[10px] text-[#4A4A6A]">{timeAgo(r.lastOrder)}</p>
-              </div>
-            </div>
-          ))}
-          {filtered.length === 0 && <Empty text="No restaurants match the filters" />}
         </div>
       </div>
 
-      {selected && (
-        <div className="w-1/2 glass rounded-2xl overflow-hidden flex flex-col animate-slide-right">
-          <div className="px-5 py-4 border-b border-white/[0.07] flex items-center justify-between">
-            <div>
-              <h3 className="text-base font-bold text-[#F0F0FF]">{selected.name}</h3>
-              <p className="text-xs text-[#6B6B9A] font-mono">{selected.id.slice(0, 20)}…</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button onClick={() => toggleOperational(selected)}
-                className={cn("px-3 py-1.5 rounded-lg text-xs font-bold border transition-all",
-                  selected.is_operational ? "bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20" : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20")}>
-                {selected.is_operational ? "Suspend" : "Reactivate"}
-              </button>
-              <button onClick={() => { setSelected(null); setDetail(null); }} className="p-1.5 text-[#6B6B9A] hover:text-white hover:bg-white/5 rounded-lg">{icons.x}</button>
-            </div>
-          </div>
-          <div className="flex-1 overflow-y-auto p-5 space-y-5">
-            {detailLoading ? <Loader /> : detail ? (
-              <>
-                <div className="grid grid-cols-3 gap-3">
-                  {[
-                    { label: "Total Revenue", value: fmt(selected.totalRevenue) },
-                    { label: "Total Orders", value: fmtNum(selected.totalOrders) },
-                    { label: "Tables", value: selected.tableCount },
-                  ].map((s) => (
-                    <div key={s.label} className="bg-white/[0.04] rounded-xl p-3 text-center border border-white/[0.06]">
-                      <p className="text-base font-bold text-[#F0F0FF]">{s.value}</p>
-                      <p className="text-[10px] text-[#6B6B9A] mt-0.5">{s.label}</p>
-                    </div>
-                  ))}
-                </div>
-
-                {detail.managers.length > 0 && (
-                  <div>
-                    <p className="text-xs font-bold text-[#6B6B9A] uppercase tracking-wider mb-2">Managers ({detail.managers.length})</p>
-                    <div className="space-y-1.5">
-                      {detail.managers.map((m) => (
-                        <div key={m.id} className="flex items-center justify-between px-3 py-2 bg-white/[0.03] rounded-lg text-sm">
-                          <span className="text-[#E0E0F0]">{m.full_name || m.email}</span>
-                          <Badge color={m.status === "active" ? "green" : "gray"}>{m.status}</Badge>
-                        </div>
-                      ))}
-                    </div>
+      <div style={{ display:"flex", gap:16 }}>
+        {/* List */}
+        <div style={{ flex: selected ? "0 0 44%" : "1", minWidth:0 }}>
+          <div className="section-rows">
+            {filtered.map(r => (
+              <div key={r.id} className={"row-item"} style={{ cursor:"pointer", borderColor: selected?.id===r.id ? "rgba(244,121,58,0.4)" : undefined, background: selected?.id===r.id ? "rgba(244,121,58,0.05)" : undefined }}
+                onClick={() => loadDetail(r)}>
+                <div style={{ display:"flex", alignItems:"center", gap:12, minWidth:0 }}>
+                  <div style={{ width:38, height:38, borderRadius:10, background: r.is_operational ? "rgba(45,212,160,0.12)" : "rgba(244,91,108,0.12)", border:`1px solid ${r.is_operational?"rgba(45,212,160,0.25)":"rgba(244,91,108,0.25)"}`, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"Syne,sans-serif", fontSize:14, fontWeight:800, color: r.is_operational ? "var(--green)" : "var(--rose)", flexShrink:0 }}>
+                    {r.name[0].toUpperCase()}
                   </div>
-                )}
-
-                <div>
-                  <p className="text-xs font-bold text-[#6B6B9A] uppercase tracking-wider mb-2">Recent Orders</p>
-                  <div className="space-y-1.5">
-                    {detail.orders.slice(0, 8).map((o) => (
-                      <div key={o.id} className="flex items-center justify-between px-3 py-2 bg-white/[0.03] rounded-lg text-xs">
-                        <span className="text-[#8080A0] font-mono">#{o.id.slice(0, 8)}</span>
-                        <span className="text-[#F0F0FF] font-semibold">{fmt(o.total)}</span>
-                        <Badge color={o.status === "paid" ? "green" : o.status === "open" ? "amber" : "indigo"}>{o.status}</Badge>
-                        <span className="text-[#4A4A6A]">{timeAgo(o.created_at)}</span>
-                      </div>
-                    ))}
+                  <div style={{ minWidth:0 }}>
+                    <p style={{ fontSize:13, fontWeight:600, color:"var(--text)" }} className="truncate">{r.name}</p>
+                    <p style={{ fontSize:11, color:"var(--text3)" }}>{r.tableCount} tables · {fmtNum(r.totalOrders)} orders · last {timeAgo(r.lastOrder)}</p>
                   </div>
                 </div>
-
-                {detail.feedback.length > 0 && (
-                  <div>
-                    <p className="text-xs font-bold text-[#6B6B9A] uppercase tracking-wider mb-2">Recent Feedback</p>
-                    <div className="space-y-1.5">
-                      {detail.feedback.slice(0, 5).map((f) => (
-                        <div key={f.id} className="px-3 py-2 bg-white/[0.03] rounded-lg text-xs space-y-1">
-                          <div className="flex items-center justify-between">
-                            <span className="text-amber-400">{"★".repeat(f.rating)}{"☆".repeat(5 - f.rating)}</span>
-                            <span className="text-[#4A4A6A]">{timeAgo(f.created_at)}</span>
-                          </div>
-                          {f.comment && <p className="text-[#8080A0] italic">&ldquo;{f.comment}&rdquo;</p>}
-                        </div>
-                      ))}
-                    </div>
+                <div style={{ display:"flex", alignItems:"center", gap:12, flexShrink:0 }}>
+                  <div style={{ textAlign:"right" }}>
+                    <p style={{ fontSize:13, fontWeight:700, color:"var(--text)", fontFamily:"DM Mono, monospace" }}>{fmt(r.todayRev)}</p>
+                    <p style={{ fontSize:10, color:"var(--text3)" }}>today</p>
                   </div>
-                )}
-              </>
-            ) : null}
+                  <Badge color={r.is_operational ? "green" : "red"}>{r.is_operational ? "Active" : "Off"}</Badge>
+                  {r.avgRating > 0 && <span style={{ fontSize:11, color:"var(--amber)", fontWeight:600 }}>★ {r.avgRating.toFixed(1)}</span>}
+                </div>
+              </div>
+            ))}
+            {filtered.length === 0 && <Empty text="No restaurants match" />}
           </div>
         </div>
-      )}
-    </div>
+
+        {/* Detail */}
+        {selected && (
+          <div className="detail-panel animate-in" style={{ flex:1, minWidth:0 }}>
+            <div className="detail-header">
+              <div>
+                <p style={{ fontSize:14, fontWeight:700, fontFamily:"Syne, sans-serif", color:"var(--text)" }}>{selected.name}</p>
+                <p className="mono" style={{ marginTop:2 }}>{selected.id.slice(0,22)}…</p>
+              </div>
+              <div style={{ display:"flex", gap:8 }}>
+                <button className={"btn " + (selected.is_operational ? "danger" : "success")} onClick={() => toggleOp(selected)}>
+                  {selected.is_operational ? "Suspend" : "Reactivate"}
+                </button>
+                <button className="icon-btn" onClick={() => { setSelected(null); setDetail(null); }}>{Icons.x}</button>
+              </div>
+            </div>
+            <div className="detail-body">
+              {detailLoading ? <Loader /> : detail ? (
+                <>
+                  <div className="mini-stats mb-4">
+                    <div className="mini-stat"><div className="mini-stat-val">{fmt(selected.totalRev)}</div><div className="mini-stat-label">Total Revenue</div></div>
+                    <div className="mini-stat"><div className="mini-stat-val">{fmtNum(selected.totalOrders)}</div><div className="mini-stat-label">Total Orders</div></div>
+                    <div className="mini-stat"><div className="mini-stat-val">{selected.tableCount}</div><div className="mini-stat-label">Tables</div></div>
+                  </div>
+
+                  {detail.managers?.length > 0 && (
+                    <div className="mb-4">
+                      <p style={{ fontSize:10, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", color:"var(--text3)", marginBottom:8 }}>Managers</p>
+                      <div className="section-rows">
+                        {detail.managers.map(m => (
+                          <div key={m.id} className="row-item">
+                            <span style={{ fontSize:13, color:"var(--text)" }}>{m.full_name || m.email}</span>
+                            <Badge color={m.status === "active" ? "green" : "gray"}>{m.status}</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mb-4">
+                    <p style={{ fontSize:10, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", color:"var(--text3)", marginBottom:8 }}>Recent Orders</p>
+                    <div className="section-rows">
+                      {detail.orders.slice(0,8).map(o => (
+                        <div key={o.id} className="row-item">
+                          <span className="mono">#{o.id.slice(0,8)}</span>
+                          <span style={{ fontSize:13, fontWeight:700, color:"var(--text)", fontFamily:"DM Mono, monospace" }}>{fmt(o.total)}</span>
+                          <Badge color={o.status==="paid"?"green":o.status==="open"?"amber":"blue"}>{o.status}</Badge>
+                          <span style={{ fontSize:11, color:"var(--text3)" }}>{timeAgo(o.created_at)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {detail.feedback?.length > 0 && (
+                    <div>
+                      <p style={{ fontSize:10, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", color:"var(--text3)", marginBottom:8 }}>Recent Feedback</p>
+                      <div className="section-rows">
+                        {detail.feedback.slice(0,5).map(f => (
+                          <div key={f.id} style={{ background:"var(--surface2)", border:"1px solid var(--border)", borderRadius:"var(--r)", padding:"10px 14px" }}>
+                            <div className="flex items-center justify-between">
+                              <span style={{ color:"var(--amber)", fontSize:13 }}>{"★".repeat(f.rating)}{"☆".repeat(5-f.rating)}</span>
+                              <span style={{ fontSize:11, color:"var(--text3)" }}>{timeAgo(f.created_at)}</span>
+                            </div>
+                            {f.comment && <p style={{ fontSize:12, color:"var(--text2)", marginTop:4, fontStyle:"italic" }}>&ldquo;{f.comment}&rdquo;</p>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : null}
+            </div>
+          </div>
+        )}
+      </div>
+    </Page>
   );
 }
 
-// ─── Orders Monitor ───────────────────────────────────────────────────────────
-function OrdersMonitor({ toast }) {
+// ─────────────────────────────────────────────────────────────────────────────
+// LIVE ORDERS
+// ─────────────────────────────────────────────────────────────────────────────
+function LiveOrders({ toast }) {
   const [orders, setOrders] = useState([]);
-  const [restaurants, setRestaurants] = useState({});
+  const [rests, setRests] = useState({});
   const [tables, setTables] = useState({});
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
@@ -670,122 +482,118 @@ function OrdersMonitor({ toast }) {
 
   const load = useCallback(async () => {
     try {
-      const [ords, rests, tbls] = await Promise.all([
-        get("orders", "select=id,total,status,created_at,restaurant_id,table_id,payment_status,customer_name,notes,order_items(id,name,price,quantity,status)&order=created_at.desc&limit=100"),
+      const [o, r, t] = await Promise.all([
+        get("orders", "select=id,total,status,created_at,restaurant_id,table_id,customer_name,order_items(id,name,price,quantity,status)&order=created_at.desc&limit=100"),
         get("restaurants", "select=id,name"),
         get("tables", "select=id,number"),
       ]);
-      setOrders(ords);
-      setRestaurants(Object.fromEntries(rests.map((r) => [r.id, r])));
-      setTables(Object.fromEntries(tbls.map((t) => [t.id, t])));
+      setOrders(o);
+      setRests(Object.fromEntries(r.map(x => [x.id, x])));
+      setTables(Object.fromEntries(t.map(x => [x.id, x])));
     } catch (e) { toast(e.message, "error"); }
     setLoading(false);
   }, [toast]);
 
-  useEffect(() => {
-    load();
-    const t = setInterval(load, 15000);
-    return () => clearInterval(t);
-  }, [load]);
+  useEffect(() => { load(); const t = setInterval(load, 15000); return () => clearInterval(t); }, [load]);
 
-  const STATUS_COLOR = { open: "amber", bill_requested: "indigo", paid: "green", cancelled: "red" };
-  const filtered = orders.filter((o) => filter === "all" || o.status === filter);
-  const active = orders.filter((o) => o.status === "open" || o.status === "bill_requested").length;
-  const billReq = orders.filter((o) => o.status === "bill_requested").length;
-  const todayPaid = orders.filter((o) => o.status === "paid" && new Date(o.created_at).toDateString() === new Date().toDateString());
+  const filtered = orders.filter(o => filter === "all" || o.status === filter);
+  const active   = orders.filter(o => o.status === "open" || o.status === "bill_requested").length;
+  const billReq  = orders.filter(o => o.status === "bill_requested").length;
+  const todayPaid = orders.filter(o => o.status === "paid" && new Date(o.created_at).toDateString() === new Date().toDateString());
+  const SC = { open:"amber", bill_requested:"blue", paid:"green", cancelled:"red" };
 
   if (loading) return <Loader />;
 
   return (
-    <div className="space-y-5 animate-fade-up">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-[#F0F0FF]">Live Orders</h1>
-          <p className="text-xs text-[#6B6B9A]">Real-time order monitoring across all restaurants</p>
-        </div>
-        <button onClick={load} className="p-2 text-[#6B6B9A] hover:text-white hover:bg-white/5 rounded-lg">{icons.refresh}</button>
-      </div>
+    <Page title="Live Orders" sub="Real-time monitoring across all restaurants"
+      actions={<button className="icon-btn" onClick={load}>{Icons.refresh}</button>}>
 
-      <div className="grid grid-cols-4 gap-3">
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:20 }}>
         {[
-          { label: "Active Now", value: active, color: "amber" },
-          { label: "Bill Pending", value: billReq, color: "indigo" },
-          { label: "Today Paid", value: todayPaid.length, color: "green" },
-          { label: "Today GMV", value: fmt(todayPaid.reduce((s, o) => s + Number(o.total), 0)), color: "orange" },
-        ].map((s) => (
-          <div key={s.label} className={cn("glass rounded-xl p-3.5 border",
-            s.color === "amber" ? "border-amber-500/20" : s.color === "indigo" ? "border-indigo-500/20" : s.color === "green" ? "border-emerald-500/20" : "border-orange-500/20")}>
-            <p className="text-xs text-[#6B6B9A]">{s.label}</p>
-            <p className={cn("text-xl font-bold mt-0.5",
-              s.color === "amber" ? "text-amber-400" : s.color === "indigo" ? "text-indigo-400" : s.color === "green" ? "text-emerald-400" : "text-orange-400")}>{s.value}</p>
+          { label:"Active Now", val: active, color:"var(--amber)" },
+          { label:"Bill Requested", val: billReq, color:"var(--blue)" },
+          { label:"Paid Today", val: todayPaid.length, color:"var(--green)" },
+          { label:"Today GMV", val: fmt(todayPaid.reduce((s,o)=>s+ +o.total,0)), color:"var(--accent)" },
+        ].map(s => (
+          <div key={s.label} className="card" style={{ padding:"16px 18px" }}>
+            <p style={{ fontSize:10, fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", color:"var(--text3)", marginBottom:6 }}>{s.label}</p>
+            <p style={{ fontFamily:"Syne, sans-serif", fontSize:22, fontWeight:800, color: s.color }}>{s.val}</p>
           </div>
         ))}
       </div>
 
-      <div className="flex gap-2 flex-wrap">
-        {["all", "open", "bill_requested", "paid", "cancelled"].map((f) => (
-          <button key={f} onClick={() => setFilter(f)}
-            className={cn("px-3 py-1.5 rounded-lg text-xs font-semibold border capitalize transition-all",
-              filter === f ? "bg-orange-500/20 border-orange-500/30 text-orange-400" : "bg-white/[0.03] border-white/[0.07] text-[#6B6B9A] hover:bg-white/[0.07]")}>
-            {f.replace("_", " ")}
-          </button>
-        ))}
-        <span className="ml-auto text-xs text-[#4A4A6A] self-center">{filtered.length} orders</span>
+      <div className="flex items-center gap-2 mb-3">
+        <div className="filter-tabs">
+          {["all","open","bill_requested","paid","cancelled"].map(f => (
+            <button key={f} className={"filter-tab"+(filter===f?" active":"")} onClick={()=>setFilter(f)}>
+              {f.replace("_"," ").replace(/\b\w/g,c=>c.toUpperCase())}
+            </button>
+          ))}
+        </div>
+        <span style={{ marginLeft:"auto", fontSize:11, color:"var(--text3)" }}>{filtered.length} orders</span>
       </div>
 
-      <div className="glass rounded-2xl overflow-hidden">
-        <div className="grid grid-cols-[1fr_auto_auto_auto_auto_auto] text-[10px] font-bold uppercase tracking-wider text-[#4A4A6A] px-4 py-2.5 border-b border-white/[0.06]">
-          <span>Order</span><span className="text-center w-24">Restaurant</span><span className="text-center w-16">Table</span>
-          <span className="text-right w-20">Total</span><span className="text-center w-24">Status</span><span className="text-right w-20">Time</span>
-        </div>
-        <div className="divide-y divide-white/[0.04] overflow-y-auto" style={{ maxHeight: "55vh" }}>
-          {filtered.map((o) => (
-            <div key={o.id} onClick={() => setSelected(selected?.id === o.id ? null : o)}
-              className={cn("grid grid-cols-[1fr_auto_auto_auto_auto_auto] items-center px-4 py-3 text-sm cursor-pointer hover:bg-white/[0.03] transition-all",
-                (o.status === "open" || o.status === "bill_requested") && "bg-amber-500/[0.03]",
-                selected?.id === o.id && "bg-white/[0.05]")}>
-              <div>
-                <p className="text-xs font-mono text-[#8080A0]">#{o.id.slice(0, 8)}</p>
-                {o.customer_name && <p className="text-[10px] text-[#6B6B9A]">{o.customer_name}</p>}
-              </div>
-              <span className="text-xs text-[#C0C0E0] w-24 text-center truncate">{restaurants[o.restaurant_id]?.name || "—"}</span>
-              <span className="text-xs text-[#6B6B9A] w-16 text-center">T{tables[o.table_id]?.number || "?"}</span>
-              <span className="text-sm font-bold text-[#F0F0FF] w-20 text-right">{fmt(o.total)}</span>
-              <span className="w-24 flex justify-center"><Badge color={STATUS_COLOR[o.status] || "gray"}>{o.status?.replace("_", " ")}</Badge></span>
-              <span className="text-[10px] text-[#4A4A6A] w-20 text-right">{timeAgo(o.created_at)}</span>
-            </div>
-          ))}
-          {filtered.length === 0 && <div className="py-12 text-center text-sm text-[#4A4A6A]">No orders</div>}
-        </div>
+      <div className="table-wrap" style={{ maxHeight:"52vh", overflowY:"auto" }}>
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Order</th><th>Restaurant</th><th>Table</th>
+              <th style={{ textAlign:"right" }}>Total</th>
+              <th style={{ textAlign:"center" }}>Status</th>
+              <th style={{ textAlign:"right" }}>Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map(o => (
+              <tr key={o.id} className={selected?.id===o.id ? "selected" : ""} onClick={() => setSelected(selected?.id===o.id ? null : o)}>
+                <td>
+                  <p className="mono">#{o.id.slice(0,8)}</p>
+                  {o.customer_name && <p style={{ fontSize:11, color:"var(--text3)" }}>{o.customer_name}</p>}
+                </td>
+                <td style={{ fontSize:12, color:"var(--text2)" }}>{rests[o.restaurant_id]?.name || "—"}</td>
+                <td style={{ fontSize:12, color:"var(--text3)" }}>T{tables[o.table_id]?.number || "?"}</td>
+                <td style={{ textAlign:"right", fontFamily:"DM Mono, monospace", fontSize:13, fontWeight:700, color:"var(--text)" }}>{fmt(o.total)}</td>
+                <td style={{ textAlign:"center" }}><Badge color={SC[o.status]||"gray"}>{o.status?.replace("_"," ")}</Badge></td>
+                <td style={{ textAlign:"right", fontSize:11, color:"var(--text3)" }}>{timeAgo(o.created_at)}</td>
+              </tr>
+            ))}
+            {filtered.length === 0 && <tr><td colSpan={6}><Empty text="No orders" /></td></tr>}
+          </tbody>
+        </table>
       </div>
 
       {selected && (
-        <div className="glass rounded-2xl p-5 space-y-3 animate-fade-in border border-white/[0.08]">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-bold text-[#F0F0FF]">Order #{selected.id.slice(0, 8)} — {restaurants[selected.restaurant_id]?.name}</p>
-            <button onClick={() => setSelected(null)} className="p-1 text-[#6B6B9A] hover:text-white">{icons.x}</button>
+        <div className="card animate-in mt-4">
+          <div className="flex items-center justify-between mb-3">
+            <p style={{ fontSize:13, fontWeight:700, fontFamily:"Syne, sans-serif", color:"var(--text)" }}>
+              Order #{selected.id.slice(0,8)} — {rests[selected.restaurant_id]?.name}
+            </p>
+            <button className="icon-btn" onClick={() => setSelected(null)}>{Icons.x}</button>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            {(selected.order_items || []).map((item) => (
-              <div key={item.id} className="flex items-center justify-between px-3 py-2 bg-white/[0.03] rounded-lg text-xs">
-                <span className="text-[#C0C0E0]">{item.name} ×{item.quantity}</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-[#F0F0FF] font-semibold">{fmt(item.price * item.quantity)}</span>
-                  <Badge color={item.status === "served" ? "green" : item.status === "ready" ? "indigo" : "amber"}>{item.status}</Badge>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:8 }}>
+            {(selected.order_items || []).map(item => (
+              <div key={item.id} className="row-item">
+                <span style={{ fontSize:12, color:"var(--text2)" }}>{item.name} ×{item.quantity}</span>
+                <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                  <span style={{ fontFamily:"DM Mono,monospace", fontSize:12, fontWeight:600, color:"var(--text)" }}>{fmt(item.price * item.quantity)}</span>
+                  <Badge color={item.status==="served"?"green":item.status==="ready"?"blue":"amber"}>{item.status}</Badge>
                 </div>
               </div>
             ))}
+            {(!selected.order_items || selected.order_items.length === 0) && <p style={{ fontSize:12, color:"var(--text3)", gridColumn:"span 2" }}>No items data</p>}
           </div>
         </div>
       )}
-    </div>
+    </Page>
   );
 }
 
-// ─── Payments ─────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// PAYMENTS
+// ─────────────────────────────────────────────────────────────────────────────
 function Payments({ toast }) {
   const [orders, setOrders] = useState([]);
-  const [restaurants, setRestaurants] = useState({});
+  const [rests, setRests] = useState({});
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState("7");
 
@@ -793,12 +601,12 @@ function Payments({ toast }) {
     setLoading(true);
     try {
       const since = new Date(); since.setDate(since.getDate() - parseInt(period, 10));
-      const [ords, rests] = await Promise.all([
-        get("orders", "select=id,total,status,payment_status,created_at,restaurant_id&order=created_at.desc"),
+      const [o, r] = await Promise.all([
+        get("orders", "select=id,total,status,created_at,restaurant_id&order=created_at.desc"),
         get("restaurants", "select=id,name"),
       ]);
-      setOrders(ords.filter((o) => new Date(o.created_at) >= since));
-      setRestaurants(Object.fromEntries(rests.map((r) => [r.id, r])));
+      setOrders(o.filter(x => new Date(x.created_at) >= since));
+      setRests(Object.fromEntries(r.map(x => [x.id, x])));
     } catch (e) { toast(e.message, "error"); }
     setLoading(false);
   }, [period, toast]);
@@ -807,96 +615,89 @@ function Payments({ toast }) {
 
   if (loading) return <Loader />;
 
-  const paid = orders.filter((o) => o.status === "paid");
-  const pending = orders.filter((o) => o.status !== "paid" && o.status !== "cancelled");
-  const gmv = paid.reduce((s, o) => s + Number(o.total), 0);
-
-  const restRevenue = Object.entries(
-    paid.reduce((acc, o) => { acc[o.restaurant_id] = (acc[o.restaurant_id] || 0) + Number(o.total); return acc; }, {})
-  ).map(([id, rev]) => ({ id, name: restaurants[id]?.name || id.slice(0, 8), rev }))
-    .sort((a, b) => b.rev - a.rev).slice(0, 8);
-
-  const maxRev = Math.max(...restRevenue.map((r) => r.rev), 1);
+  const paid = orders.filter(o => o.status === "paid");
+  const pending = orders.filter(o => o.status !== "paid" && o.status !== "cancelled");
+  const gmv = paid.reduce((s,o) => s + +o.total, 0);
+  const restRev = Object.entries(paid.reduce((acc,o) => { acc[o.restaurant_id] = (acc[o.restaurant_id]||0) + +o.total; return acc; }, {}))
+    .map(([id,rev]) => ({ id, name: rests[id]?.name || id.slice(0,8), rev }))
+    .sort((a,b) => b.rev - a.rev).slice(0,8);
+  const maxRev = Math.max(...restRev.map(r=>r.rev), 1);
 
   return (
-    <div className="space-y-6 animate-fade-up">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-[#F0F0FF]">Payments & Finance</h1>
-          <p className="text-xs text-[#6B6B9A]">Transaction overview and settlement status</p>
-        </div>
-        <div className="flex rounded-xl overflow-hidden border border-white/[0.08]">
-          {["7", "30", "90"].map((p) => (
+    <Page title="Payments & Finance" sub="Transaction overview"
+      actions={
+        <div style={{ display:"flex", border:"1px solid var(--border)", borderRadius:10, overflow:"hidden" }}>
+          {["7","30","90"].map(p => (
             <button key={p} onClick={() => setPeriod(p)}
-              className={cn("px-4 py-2 text-xs font-semibold transition-all",
-                period === p ? "bg-orange-500 text-white" : "bg-white/[0.03] text-[#6B6B9A] hover:bg-white/[0.07]")}>
-              {p === "7" ? "7D" : p === "30" ? "30D" : "90D"}
+              style={{ padding:"7px 16px", fontSize:12, fontWeight:600, cursor:"pointer", background: period===p ? "var(--accent)" : "var(--surface2)", color: period===p ? "#fff" : "var(--text3)", border:"none", fontFamily:"DM Sans, sans-serif" }}>
+              {p}D
             </button>
           ))}
         </div>
+      }>
+
+      <div className="stat-grid mb-4">
+        <StatCard label="Total GMV" value={fmt(gmv)} sub={paid.length + " transactions"} icon={Icons.dollar} color="green" />
+        <StatCard label="Avg Order" value={fmt(gmv / Math.max(paid.length,1))} sub="per transaction" icon={Icons.trend} color="orange" />
+        <StatCard label="Pending" value={fmtNum(pending.length)} sub="open orders" icon={Icons.activity} color="amber" />
+        <StatCard label="Restaurants" value={fmtNum(Object.keys(rests).length)} sub="with transactions" icon={Icons.restaurants} color="blue" />
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total GMV" value={fmt(gmv)} sub={`${paid.length} transactions`} icon={icons.dollar} color="emerald" />
-        <StatCard label="Avg Order" value={fmt(gmv / Math.max(paid.length, 1))} sub="per transaction" icon={icons.trend} color="orange" />
-        <StatCard label="Pending" value={fmtNum(pending.length)} sub="open orders" icon={icons.activity} color="amber" />
-        <StatCard label="Restaurants" value={fmtNum(Object.keys(restaurants).length)} sub="active" icon={icons.restaurants} color="indigo" />
-      </div>
-
-      <div className="glass rounded-2xl p-5 space-y-4">
-        <h2 className="text-sm font-bold text-[#F0F0FF]">Revenue by Restaurant</h2>
-        <div className="space-y-3">
-          {restRevenue.map((r, i) => (
-            <div key={r.id} className="flex items-center gap-3">
-              <span className="text-[10px] text-[#4A4A6A] w-4">{i + 1}</span>
-              <p className="text-xs text-[#C0C0E0] w-36 truncate">{r.name}</p>
-              <div className="flex-1 h-2 bg-white/[0.05] rounded-full overflow-hidden">
-                <div className="h-full rounded-full bg-orange-500/70 transition-all" style={{ width: `${(r.rev / maxRev) * 100}%` }} />
+      <div className="card mb-4">
+        <p style={{ fontSize:13, fontWeight:700, fontFamily:"Syne,sans-serif", color:"var(--text)", marginBottom:16 }}>Revenue by Restaurant</p>
+        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+          {restRev.map((r,i) => (
+            <div key={r.id} style={{ display:"flex", alignItems:"center", gap:12 }}>
+              <span style={{ fontSize:11, color:"var(--text3)", width:18, flexShrink:0, fontFamily:"DM Mono,monospace" }}>{i+1}</span>
+              <span style={{ fontSize:12, color:"var(--text2)", width:140, flexShrink:0 }} className="truncate">{r.name}</span>
+              <div className="progress-bar">
+                <div className="progress-fill" style={{ width:(r.rev/maxRev*100)+"%", background:"var(--accent)" }} />
               </div>
-              <span className="text-xs font-bold text-[#F0F0FF] w-24 text-right">{fmt(r.rev)}</span>
+              <span style={{ fontSize:12, fontWeight:700, color:"var(--text)", fontFamily:"DM Mono,monospace", width:90, textAlign:"right", flexShrink:0 }}>{fmt(r.rev)}</span>
             </div>
           ))}
+          {restRev.length === 0 && <Empty text="No revenue data" />}
         </div>
       </div>
 
-      <div className="glass rounded-2xl overflow-hidden">
-        <div className="px-5 py-3 border-b border-white/[0.06]">
-          <h2 className="text-sm font-bold text-[#F0F0FF]">Recent Transactions</h2>
-        </div>
-        <div className="divide-y divide-white/[0.04] overflow-y-auto" style={{ maxHeight: "40vh" }}>
-          {orders.map((o) => (
-            <div key={o.id} className="grid grid-cols-[1fr_auto_auto_auto] items-center px-5 py-3 text-xs gap-4">
-              <div>
-                <p className="font-mono text-[#8080A0]">#{o.id.slice(0, 10)}</p>
-                <p className="text-[10px] text-[#4A4A6A]">{restaurants[o.restaurant_id]?.name}</p>
-              </div>
-              <span className="font-bold text-[#F0F0FF]">{fmt(o.total)}</span>
-              <Badge color={o.status === "paid" ? "green" : o.status === "open" ? "amber" : "gray"}>{o.status}</Badge>
-              <span className="text-[#4A4A6A] text-right">{fmtDate(o.created_at)}</span>
-            </div>
-          ))}
-        </div>
+      <div className="table-wrap" style={{ maxHeight:"40vh", overflowY:"auto" }}>
+        <table className="table">
+          <thead><tr><th>Transaction</th><th>Restaurant</th><th style={{textAlign:"right"}}>Amount</th><th style={{textAlign:"center"}}>Status</th><th style={{textAlign:"right"}}>Date</th></tr></thead>
+          <tbody>
+            {orders.map(o => (
+              <tr key={o.id}>
+                <td><span className="mono">#{o.id.slice(0,10)}</span></td>
+                <td style={{ fontSize:12, color:"var(--text2)" }}>{rests[o.restaurant_id]?.name || "—"}</td>
+                <td style={{ textAlign:"right", fontFamily:"DM Mono,monospace", fontSize:13, fontWeight:700, color:"var(--text)" }}>{fmt(o.total)}</td>
+                <td style={{ textAlign:"center" }}><Badge color={o.status==="paid"?"green":o.status==="open"?"amber":"gray"}>{o.status}</Badge></td>
+                <td style={{ textAlign:"right", fontSize:11, color:"var(--text3)" }}>{fmtDate(o.created_at)}</td>
+              </tr>
+            ))}
+            {orders.length === 0 && <tr><td colSpan={5}><Empty /></td></tr>}
+          </tbody>
+        </table>
       </div>
-    </div>
+    </Page>
   );
 }
 
-// ─── Feedback ─────────────────────────────────────────────────────────────────
-function FeedbackDashboard({ toast }) {
+// ─────────────────────────────────────────────────────────────────────────────
+// FEEDBACK
+// ─────────────────────────────────────────────────────────────────────────────
+function FeedbackView({ toast }) {
   const [feedback, setFeedback] = useState([]);
-  const [restaurants, setRestaurants] = useState({});
+  const [rests, setRests] = useState({});
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [fb, rests] = await Promise.all([
-        get("feedback", "select=id,rating,comment,created_at,restaurant_id,table_number,status,manager_response&order=created_at.desc"),
+      const [fb, r] = await Promise.all([
+        get("feedback", "select=id,rating,comment,created_at,restaurant_id,table_number,manager_response&order=created_at.desc"),
         get("restaurants", "select=id,name"),
       ]);
-      setFeedback(fb);
-      setRestaurants(Object.fromEntries(rests.map((r) => [r.id, r])));
+      setFeedback(fb); setRests(Object.fromEntries(r.map(x => [x.id, x])));
     } catch (e) { toast(e.message, "error"); }
     setLoading(false);
   }, [toast]);
@@ -905,105 +706,91 @@ function FeedbackDashboard({ toast }) {
 
   if (loading) return <Loader />;
 
-  const avgRating = feedback.length ? feedback.reduce((s, f) => s + f.rating, 0) / feedback.length : 0;
-  const dist = [5, 4, 3, 2, 1].map((r) => ({ r, n: feedback.filter((f) => f.rating === r).length }));
-  const filtered = feedback.filter((f) =>
-    filter === "all" ||
-    String(f.rating) === filter ||
-    (filter === "low" && f.rating <= 2) ||
-    (filter === "unresponded" && !f.manager_response)
+  const avg = feedback.length ? feedback.reduce((s,f)=>s+f.rating,0)/feedback.length : 0;
+  const dist = [5,4,3,2,1].map(r => ({ r, n: feedback.filter(f=>f.rating===r).length }));
+  const filtered = feedback.filter(f =>
+    filter==="all" || String(f.rating)===filter ||
+    (filter==="low" && f.rating<=2) || (filter==="unresponded" && !f.manager_response)
   );
 
   return (
-    <div className="space-y-5 animate-fade-up">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-[#F0F0FF]">Feedback Monitor</h1>
-          <p className="text-xs text-[#6B6B9A]">{feedback.length} total reviews</p>
-        </div>
+    <Page title="Feedback Monitor" sub={feedback.length + " total reviews"}>
+      <div className="stat-grid mb-4">
+        <StatCard label="Avg Rating" value={avg.toFixed(2)+" ★"} sub={fmtNum(feedback.length)+" reviews"} icon={Icons.star} color="amber" />
+        <StatCard label="Positive (4-5★)" value={fmtNum(feedback.filter(f=>f.rating>=4).length)} sub="happy customers" icon={Icons.trend} color="green" />
+        <StatCard label="Negative (1-2★)" value={fmtNum(feedback.filter(f=>f.rating<=2).length)} sub="needs attention" icon={Icons.alerts} color="rose" />
+        <StatCard label="Unresponded" value={fmtNum(feedback.filter(f=>!f.manager_response).length)} sub="awaiting reply" icon={Icons.feedback} color="blue" />
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Avg Rating" value={avgRating.toFixed(2) + " ★"} sub={`${feedback.length} reviews`} icon={icons.star} color="amber" />
-        <StatCard label="Positive (4-5★)" value={fmtNum(feedback.filter((f) => f.rating >= 4).length)} sub="happy customers" icon={icons.trend} color="emerald" />
-        <StatCard label="Negative (1-2★)" value={fmtNum(feedback.filter((f) => f.rating <= 2).length)} sub="needs attention" icon={icons.alerts} color="rose" />
-        <StatCard label="Unresponded" value={fmtNum(feedback.filter((f) => !f.manager_response).length)} sub="awaiting reply" icon={icons.feedback} color="indigo" />
-      </div>
-
-      <div className="glass rounded-2xl p-5 space-y-3">
-        <h2 className="text-sm font-bold text-[#F0F0FF]">Rating Distribution</h2>
-        <div className="space-y-2">
-          {dist.map(({ r, n }) => (
-            <div key={r} className="flex items-center gap-3 text-xs">
-              <span className="text-amber-400 w-6">{r}★</span>
-              <div className="flex-1 h-2 bg-white/[0.05] rounded-full overflow-hidden">
-                <div className={cn("h-full rounded-full", r >= 4 ? "bg-emerald-500" : r === 3 ? "bg-amber-500" : "bg-red-500")}
-                  style={{ width: feedback.length ? `${(n / feedback.length) * 100}%` : "0%" }} />
-              </div>
-              <span className="text-[#6B6B9A] w-6 text-right">{n}</span>
+      <div className="card mb-4">
+        <p style={{ fontSize:13, fontWeight:700, fontFamily:"Syne,sans-serif", color:"var(--text)", marginBottom:12 }}>Rating Distribution</p>
+        {dist.map(({r,n}) => (
+          <div key={r} style={{ display:"flex", alignItems:"center", gap:12, marginBottom:8 }}>
+            <span style={{ fontSize:11, color:"var(--amber)", fontWeight:700, width:22, flexShrink:0 }}>{r}★</span>
+            <div className="progress-bar">
+              <div className="progress-fill" style={{ width: feedback.length?(n/feedback.length*100)+"%":"0%", background: r>=4?"var(--green)":r===3?"var(--amber)":"var(--rose)" }} />
             </div>
+            <span style={{ fontSize:11, color:"var(--text3)", width:24, textAlign:"right", flexShrink:0, fontFamily:"DM Mono,monospace" }}>{n}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex items-center gap-2 mb-4">
+        <div className="filter-tabs">
+          {[["all","All"],["low","Low (1-2★)"],["unresponded","Unresponded"],["5","5★"],["4","4★"],["3","3★"]].map(([v,l]) => (
+            <button key={v} className={"filter-tab"+(filter===v?" active":"")} onClick={()=>setFilter(v)}>{l}</button>
           ))}
         </div>
       </div>
 
-      <div className="flex gap-2 flex-wrap">
-        {[["all", "All"], ["low", "Low (1-2★)"], ["unresponded", "Unresponded"], ["5", "5★"], ["4", "4★"], ["3", "3★"]].map(([v, l]) => (
-          <button key={v} onClick={() => setFilter(v)}
-            className={cn("px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all",
-              filter === v ? "bg-orange-500/20 border-orange-500/30 text-orange-400" : "bg-white/[0.03] border-white/[0.07] text-[#6B6B9A] hover:bg-white/[0.07]")}>
-            {l}
-          </button>
-        ))}
-      </div>
-
-      <div className="space-y-2 overflow-y-auto" style={{ maxHeight: "50vh" }}>
-        {filtered.map((f) => (
-          <div key={f.id} className="glass rounded-xl p-4 space-y-2">
+      <div className="section-rows" style={{ maxHeight:"50vh", overflowY:"auto" }}>
+        {filtered.map(f => (
+          <div key={f.id} style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:"var(--r2)", padding:"14px 16px" }}>
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-amber-400 text-sm">{"★".repeat(f.rating)}{"☆".repeat(5 - f.rating)}</span>
-                <Badge color={f.rating >= 4 ? "green" : f.rating === 3 ? "amber" : "red"}>{f.rating}/5</Badge>
-                {f.table_number && <span className="text-xs text-[#6B6B9A]">T{f.table_number}</span>}
+              <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                <span style={{ color:"var(--amber)", fontSize:14 }}>{"★".repeat(f.rating)}{"☆".repeat(5-f.rating)}</span>
+                <Badge color={f.rating>=4?"green":f.rating===3?"amber":"red"}>{f.rating}/5</Badge>
+                {f.table_number && <span style={{ fontSize:11, color:"var(--text3)" }}>Table {f.table_number}</span>}
               </div>
-              <div className="flex items-center gap-2 text-xs text-[#4A4A6A]">
-                <span className="text-[#6B6B9A]">{restaurants[f.restaurant_id]?.name}</span>
+              <div style={{ display:"flex", alignItems:"center", gap:8, fontSize:11, color:"var(--text3)" }}>
+                <span style={{ color:"var(--text2)" }}>{rests[f.restaurant_id]?.name}</span>
                 <span>·</span>
                 <span>{timeAgo(f.created_at)}</span>
               </div>
             </div>
-            {f.comment && <p className="text-sm text-[#C0C0E0] italic">&ldquo;{f.comment}&rdquo;</p>}
+            {f.comment && <p style={{ fontSize:13, color:"var(--text2)", marginTop:8, fontStyle:"italic" }}>&ldquo;{f.comment}&rdquo;</p>}
             {f.manager_response && (
-              <div className="pl-3 border-l-2 border-orange-500/40">
-                <p className="text-[10px] text-orange-400 font-semibold mb-0.5">Manager response</p>
-                <p className="text-xs text-[#8080A0]">{f.manager_response}</p>
+              <div style={{ marginTop:10, paddingLeft:12, borderLeft:"2px solid var(--accent)" }}>
+                <p style={{ fontSize:10, fontWeight:700, color:"var(--accent)", marginBottom:2, textTransform:"uppercase", letterSpacing:"0.08em" }}>Manager response</p>
+                <p style={{ fontSize:12, color:"var(--text3)" }}>{f.manager_response}</p>
               </div>
             )}
           </div>
         ))}
-        {filtered.length === 0 && <Empty text="No feedback matches the filter" />}
+        {filtered.length === 0 && <Empty text="No feedback matches filter" />}
       </div>
-    </div>
+    </Page>
   );
 }
 
-// ─── QR Health ────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// QR HEALTH
+// ─────────────────────────────────────────────────────────────────────────────
 function QRHealth({ toast }) {
   const [tables, setTables] = useState([]);
-  const [restaurants, setRestaurants] = useState({});
+  const [rests, setRests] = useState({});
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [tbls, rests, ords] = await Promise.all([
+      const [t, r, o] = await Promise.all([
         get("tables", "select=id,number,seats,restaurant_id,qr_code_url,created_at"),
         get("restaurants", "select=id,name,is_operational"),
         get("orders", "select=id,table_id,created_at&order=created_at.desc"),
       ]);
-      setTables(tbls);
-      setRestaurants(Object.fromEntries(rests.map((r) => [r.id, r])));
-      setOrders(ords);
+      setTables(t); setRests(Object.fromEntries(r.map(x=>[x.id,x]))); setOrders(o);
     } catch (e) { toast(e.message, "error"); }
     setLoading(false);
   }, [toast]);
@@ -1012,86 +799,80 @@ function QRHealth({ toast }) {
 
   if (loading) return <Loader />;
 
-  const enriched = tables.map((t) => {
-    const tOrders = orders.filter((o) => o.table_id === t.id);
-    const last = tOrders[0]?.created_at;
-    const daysSinceLast = last ? Math.floor((Date.now() - new Date(last)) / 86400000) : 999;
+  const enriched = tables.map(t => {
+    const to = orders.filter(o => o.table_id === t.id);
+    const last = to[0]?.created_at;
+    const days = last ? Math.floor((Date.now()-new Date(last))/86400000) : 999;
     const hasQr = !!t.qr_code_url;
-    const inactive = tOrders.length === 0 || daysSinceLast > 7;
-    return { ...t, orderCount: tOrders.length, lastOrder: last, daysSinceLast, hasQr, inactive };
+    const inactive = to.length===0 || days>7;
+    return { ...t, orderCount:to.length, lastOrder:last, daysSince:days, hasQr, inactive };
   });
 
-  const issues = enriched.filter((t) => !t.hasQr || t.inactive);
-  const healthy = enriched.filter((t) => t.hasQr && !t.inactive);
+  const issues = enriched.filter(t => !t.hasQr || t.inactive);
+  const healthy = enriched.filter(t => t.hasQr && !t.inactive);
 
-  const byRestaurant = Object.entries(
-    enriched.reduce((acc, t) => {
-      if (!acc[t.restaurant_id]) acc[t.restaurant_id] = { tables: 0, issues: 0, orders: 0 };
-      acc[t.restaurant_id].tables++;
-      if (!t.hasQr || t.inactive) acc[t.restaurant_id].issues++;
-      acc[t.restaurant_id].orders += t.orderCount;
-      return acc;
-    }, {})
-  ).map(([id, v]) => ({ id, name: restaurants[id]?.name || id.slice(0, 10), ...v })).sort((a, b) => b.issues - a.issues);
+  const byRest = Object.entries(enriched.reduce((acc,t) => {
+    if (!acc[t.restaurant_id]) acc[t.restaurant_id] = { tables:0, issues:0 };
+    acc[t.restaurant_id].tables++;
+    if (!t.hasQr || t.inactive) acc[t.restaurant_id].issues++;
+    return acc;
+  }, {})).map(([id,v]) => ({ id, name:rests[id]?.name||id.slice(0,10), ...v })).sort((a,b)=>b.issues-a.issues);
 
   return (
-    <div className="space-y-5 animate-fade-up">
-      <div>
-        <h1 className="text-xl font-bold text-[#F0F0FF]">QR Health Monitor</h1>
-        <p className="text-xs text-[#6B6B9A]">Track QR code status and table activity</p>
+    <Page title="QR Health Monitor" sub="QR code status and table activity"
+      actions={<button className="icon-btn" onClick={load}>{Icons.refresh}</button>}>
+
+      <div className="stat-grid mb-4">
+        <StatCard label="Total Tables" value={fmtNum(tables.length)} icon={Icons.table} color="blue" />
+        <StatCard label="Healthy" value={fmtNum(healthy.length)} sub="QR active + recent" icon={Icons.check} color="green" />
+        <StatCard label="Issues" value={fmtNum(issues.length)} sub="missing or inactive" icon={Icons.alerts} color="rose" />
+        <StatCard label="No QR Code" value={fmtNum(enriched.filter(t=>!t.hasQr).length)} icon={Icons.qr} color="amber" />
       </div>
 
-      <div className="grid grid-cols-4 gap-3">
-        <StatCard label="Total Tables" value={fmtNum(tables.length)} icon={icons.table} color="indigo" />
-        <StatCard label="Healthy" value={fmtNum(healthy.length)} sub="active QR + recent orders" icon={icons.check} color="emerald" />
-        <StatCard label="Issues" value={fmtNum(issues.length)} sub="inactive or missing QR" icon={icons.alerts} color="rose" />
-        <StatCard label="No QR Code" value={fmtNum(enriched.filter((t) => !t.hasQr).length)} icon={icons.qr} color="amber" />
-      </div>
-
-      <div className="glass rounded-2xl p-5 space-y-3">
-        <h2 className="text-sm font-bold text-[#F0F0FF]">Restaurant Table Health</h2>
-        <div className="space-y-2">
-          {byRestaurant.slice(0, 12).map((r) => (
-            <div key={r.id} className="flex items-center gap-3 text-xs">
-              <p className="text-[#C0C0E0] w-40 truncate">{r.name}</p>
-              <div className="flex-1 flex items-center gap-2">
-                <div className="flex-1 h-2 bg-white/[0.05] rounded-full overflow-hidden">
-                  <div className="h-full bg-emerald-500/70 rounded-full" style={{ width: `${r.tables ? ((r.tables - r.issues) / r.tables) * 100 : 0}%` }} />
-                </div>
-                <span className="text-[#6B6B9A] w-20 text-right">{r.tables - r.issues}/{r.tables} healthy</span>
-              </div>
-              {r.issues > 0 && <Badge color="red">{r.issues} issues</Badge>}
+      <div className="card mb-4">
+        <p style={{ fontSize:13, fontWeight:700, fontFamily:"Syne,sans-serif", color:"var(--text)", marginBottom:14 }}>Restaurant Table Health</p>
+        {byRest.slice(0,12).map(r => (
+          <div key={r.id} style={{ display:"flex", alignItems:"center", gap:12, marginBottom:10 }}>
+            <span style={{ fontSize:12, color:"var(--text2)", width:150, flexShrink:0 }} className="truncate">{r.name}</span>
+            <div className="progress-bar">
+              <div className="progress-fill" style={{ width:r.tables?((r.tables-r.issues)/r.tables*100)+"%":"0%", background:"var(--green)" }} />
             </div>
-          ))}
-        </div>
+            <span style={{ fontSize:11, color:"var(--text3)", width:90, textAlign:"right", flexShrink:0 }}>{r.tables-r.issues}/{r.tables} ok</span>
+            {r.issues > 0 && <Badge color="red">{r.issues} issues</Badge>}
+          </div>
+        ))}
       </div>
 
       {issues.length > 0 && (
-        <div className="glass rounded-2xl overflow-hidden border border-red-500/10">
-          <div className="px-5 py-3 border-b border-white/[0.06] flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-red-400" />
-            <h2 className="text-sm font-bold text-[#F0F0FF]">Tables Needing Attention ({issues.length})</h2>
+        <div className="table-wrap" style={{ borderColor:"rgba(244,91,108,0.2)", maxHeight:"40vh", overflowY:"auto" }}>
+          <div style={{ padding:"12px 16px", borderBottom:"1px solid rgba(244,91,108,0.15)", display:"flex", alignItems:"center", gap:8 }}>
+            <span style={{ width:8, height:8, borderRadius:"50%", background:"var(--rose)", display:"inline-block" }} />
+            <p style={{ fontSize:12, fontWeight:700, color:"var(--text)" }}>Tables Needing Attention ({issues.length})</p>
           </div>
-          <div className="divide-y divide-white/[0.04] overflow-y-auto" style={{ maxHeight: "40vh" }}>
-            {issues.map((t) => (
-              <div key={t.id} className="grid grid-cols-[auto_1fr_auto_auto_auto] items-center gap-4 px-5 py-3 text-xs">
-                <span className="text-[#F0F0FF] font-bold">T{t.number}</span>
-                <span className="text-[#8080A0] truncate">{restaurants[t.restaurant_id]?.name}</span>
-                <span className="text-[#6B6B9A]">{t.orderCount} orders</span>
-                {!t.hasQr && <Badge color="red">No QR</Badge>}
-                {t.hasQr && t.inactive && <Badge color="amber">Inactive {t.daysSinceLast === 999 ? "(never)" : `(${t.daysSinceLast}d)`}</Badge>}
-                <span className="text-[#4A4A6A]">{t.lastOrder ? timeAgo(t.lastOrder) : "never"}</span>
-              </div>
-            ))}
-          </div>
+          <table className="table">
+            <thead><tr><th>Table</th><th>Restaurant</th><th>Orders</th><th>Issue</th><th>Last Activity</th></tr></thead>
+            <tbody>
+              {issues.map(t => (
+                <tr key={t.id}>
+                  <td style={{ fontWeight:700, color:"var(--text)", fontFamily:"Syne,sans-serif" }}>T{t.number}</td>
+                  <td style={{ fontSize:12, color:"var(--text2)" }}>{rests[t.restaurant_id]?.name}</td>
+                  <td style={{ fontSize:12, color:"var(--text3)" }}>{t.orderCount}</td>
+                  <td>{!t.hasQr ? <Badge color="red">No QR</Badge> : <Badge color="amber">Inactive {t.daysSince===999?"(never)":`(${t.daysSince}d)`}</Badge>}</td>
+                  <td style={{ fontSize:11, color:"var(--text3)" }}>{t.lastOrder ? timeAgo(t.lastOrder) : "never"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
-    </div>
+    </Page>
   );
 }
 
-// ─── Alerts ───────────────────────────────────────────────────────────────────
-function Alerts({ toast }) {
+// ─────────────────────────────────────────────────────────────────────────────
+// ALERTS
+// ─────────────────────────────────────────────────────────────────────────────
+function AlertsView({ toast }) {
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -1099,41 +880,40 @@ function Alerts({ toast }) {
     setLoading(true);
     try {
       const [orders, feedback, restaurants, tables] = await Promise.all([
-        get("orders", "select=id,total,status,created_at,restaurant_id,payment_status&order=created_at.desc&limit=500"),
+        get("orders", "select=id,status,created_at,restaurant_id&order=created_at.desc&limit=500"),
         get("feedback", "select=id,rating,restaurant_id,created_at&order=created_at.desc&limit=200"),
         get("restaurants", "select=id,name,is_operational"),
         get("tables", "select=id,restaurant_id,qr_code_url"),
       ]);
-
       const now = Date.now();
-      const restMap = Object.fromEntries(restaurants.map((r) => [r.id, r]));
+      const rm = Object.fromEntries(restaurants.map(r=>[r.id,r]));
       const found = [];
 
-      orders.filter((o) => o.status === "open").forEach((o) => {
-        const mins = (now - new Date(o.created_at)) / 60000;
-        if (mins > 45) found.push({ type: "stuck_order", severity: "high", title: "Stuck Order", body: `Order ${o.id.slice(0, 8)} at ${restMap[o.restaurant_id]?.name} open for ${Math.floor(mins)}m`, time: o.created_at });
+      orders.filter(o=>o.status==="open").forEach(o => {
+        const mins = (now-new Date(o.created_at))/60000;
+        if (mins>45) found.push({ severity:"high", title:"Stuck Order", body:`Order ${o.id.slice(0,8)} at ${rm[o.restaurant_id]?.name} open for ${Math.floor(mins)}m`, time:o.created_at });
       });
 
-      const recentLow = feedback.filter((f) => f.rating <= 2 && now - new Date(f.created_at) < 86400000 * 3);
-      const byRest = recentLow.reduce((acc, f) => { acc[f.restaurant_id] = (acc[f.restaurant_id] || 0) + 1; return acc; }, {});
-      Object.entries(byRest).forEach(([id, n]) => {
-        if (n >= 2) found.push({ type: "low_ratings", severity: "medium", title: "Low Rating Cluster", body: `${n} low ratings in last 3 days at ${restMap[id]?.name}`, time: new Date().toISOString() });
+      const recentLow = feedback.filter(f=>f.rating<=2 && now-new Date(f.created_at)<86400000*3);
+      const byR = recentLow.reduce((acc,f)=>{ acc[f.restaurant_id]=(acc[f.restaurant_id]||0)+1; return acc; },{});
+      Object.entries(byR).forEach(([id,n]) => {
+        if (n>=2) found.push({ severity:"medium", title:"Low Rating Cluster", body:`${n} low ratings in 3 days at ${rm[id]?.name}`, time:new Date().toISOString() });
       });
 
-      orders.filter((o) => o.status === "bill_requested").forEach((o) => {
-        const mins = (now - new Date(o.created_at)) / 60000;
-        if (mins > 20) found.push({ type: "bill_wait", severity: "medium", title: "Long Bill Wait", body: `Bill at ${restMap[o.restaurant_id]?.name} requested ${Math.floor(mins)}m ago`, time: o.created_at });
+      orders.filter(o=>o.status==="bill_requested").forEach(o => {
+        const mins = (now-new Date(o.created_at))/60000;
+        if (mins>20) found.push({ severity:"medium", title:"Long Bill Wait", body:`Bill at ${rm[o.restaurant_id]?.name} pending for ${Math.floor(mins)}m`, time:o.created_at });
       });
 
-      const noQr = tables.filter((t) => !t.qr_code_url);
-      if (noQr.length > 0) found.push({ type: "missing_qr", severity: "low", title: "Missing QR Codes", body: `${noQr.length} tables across ${new Set(noQr.map((t) => t.restaurant_id)).size} restaurants have no QR code`, time: new Date().toISOString() });
+      const noQr = tables.filter(t=>!t.qr_code_url);
+      if (noQr.length>0) found.push({ severity:"low", title:"Missing QR Codes", body:`${noQr.length} tables across ${new Set(noQr.map(t=>t.restaurant_id)).size} restaurants`, time:new Date().toISOString() });
 
-      restaurants.filter((r) => !r.is_operational).forEach((r) => {
-        found.push({ type: "inactive_rest", severity: "low", title: "Inactive Restaurant", body: `${r.name} is currently closed / suspended`, time: new Date().toISOString() });
+      restaurants.filter(r=>!r.is_operational).forEach(r => {
+        found.push({ severity:"low", title:"Restaurant Inactive", body:`${r.name} is currently suspended`, time:new Date().toISOString() });
       });
 
-      const sevScore = { high: 3, medium: 2, low: 1 };
-      setAlerts(found.sort((a, b) => sevScore[b.severity] - sevScore[a.severity]));
+      const S = { high:3, medium:2, low:1 };
+      setAlerts(found.sort((a,b)=>S[b.severity]-S[a.severity]));
     } catch (e) { toast(e.message, "error"); }
     setLoading(false);
   }, [toast]);
@@ -1142,71 +922,59 @@ function Alerts({ toast }) {
 
   if (loading) return <Loader />;
 
-  const SEV = { high: { color: "rose", label: "Critical" }, medium: { color: "amber", label: "Warning" }, low: { color: "indigo", label: "Info" } };
-  const high = alerts.filter((a) => a.severity === "high");
-  const medium = alerts.filter((a) => a.severity === "medium");
-  const low = alerts.filter((a) => a.severity === "low");
+  const high = alerts.filter(a=>a.severity==="high");
+  const med  = alerts.filter(a=>a.severity==="medium");
+  const low  = alerts.filter(a=>a.severity==="low");
 
   return (
-    <div className="space-y-5 animate-fade-up">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-[#F0F0FF]">Alerts & Monitoring</h1>
-          <p className="text-xs text-[#6B6B9A]">Auto-generated from live data</p>
-        </div>
-        <button onClick={generate} className="flex items-center gap-1.5 px-3 py-2 bg-white/[0.05] border border-white/[0.09] text-[#E0E0F0] rounded-xl text-xs font-semibold hover:bg-white/[0.09]">
-          {icons.refresh} Refresh
-        </button>
-      </div>
+    <Page title="Alerts & Monitoring" sub="Auto-generated from live data"
+      actions={<button className="btn" onClick={generate}>{Icons.refresh} Refresh</button>}>
 
-      <div className="grid grid-cols-3 gap-3">
-        <div className="glass rounded-xl p-4 border border-rose-500/20"><p className="text-xs text-[#6B6B9A]">Critical</p><p className="text-2xl font-bold text-rose-400">{high.length}</p></div>
-        <div className="glass rounded-xl p-4 border border-amber-500/20"><p className="text-xs text-[#6B6B9A]">Warnings</p><p className="text-2xl font-bold text-amber-400">{medium.length}</p></div>
-        <div className="glass rounded-xl p-4 border border-indigo-500/20"><p className="text-xs text-[#6B6B9A]">Info</p><p className="text-2xl font-bold text-indigo-400">{low.length}</p></div>
+      <div className="counter-cards">
+        <div className="counter-card high"><div className="counter-val">{high.length}</div><div className="counter-label">Critical</div></div>
+        <div className="counter-card medium"><div className="counter-val">{med.length}</div><div className="counter-label">Warnings</div></div>
+        <div className="counter-card low"><div className="counter-val">{low.length}</div><div className="counter-label">Info</div></div>
       </div>
 
       {alerts.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">{icons.check}</div>
-          <p className="text-sm font-semibold text-emerald-400">All systems healthy!</p>
-          <p className="text-xs text-[#6B6B9A]">No alerts detected at this time</p>
+        <div style={{ textAlign:"center", padding:"60px 0" }}>
+          <div style={{ width:52, height:52, borderRadius:16, background:"rgba(45,212,160,0.1)", border:"1px solid rgba(45,212,160,0.2)", display:"inline-flex", alignItems:"center", justifyContent:"center", color:"var(--green)", marginBottom:12 }}>{Icons.check}</div>
+          <p style={{ fontSize:14, fontWeight:600, color:"var(--green)" }}>All systems healthy</p>
+          <p style={{ fontSize:12, color:"var(--text3)", marginTop:4 }}>No alerts detected</p>
         </div>
       )}
 
-      <div className="space-y-2">
-        {alerts.map((a, i) => {
-          const sv = SEV[a.severity] || SEV.low;
-          return (
-            <div key={i} className={cn("glass rounded-xl p-4 flex items-start gap-3 border",
-              a.severity === "high" ? "border-rose-500/20 bg-rose-500/[0.04]" : a.severity === "medium" ? "border-amber-500/20 bg-amber-500/[0.04]" : "border-indigo-500/15")}>
-              <div className={cn("w-2 h-2 rounded-full mt-1.5 shrink-0",
-                a.severity === "high" ? "bg-rose-400" : a.severity === "medium" ? "bg-amber-400" : "bg-indigo-400")} />
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-semibold text-[#F0F0FF]">{a.title}</p>
-                  <Badge color={sv.color}>{sv.label}</Badge>
-                </div>
-                <p className="text-xs text-[#8080A0] mt-0.5">{a.body}</p>
-              </div>
-              <span className="text-[10px] text-[#4A4A6A] shrink-0">{timeAgo(a.time)}</span>
+      {alerts.map((a, i) => (
+        <div key={i} className={"alert-item " + a.severity}>
+          <div className="alert-bullet" />
+          <div style={{ flex:1 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+              <span className="alert-title">{a.title}</span>
+              <Badge color={a.severity==="high"?"rose":a.severity==="medium"?"amber":"blue"}>
+                {a.severity==="high"?"Critical":a.severity==="medium"?"Warning":"Info"}
+              </Badge>
             </div>
-          );
-        })}
-      </div>
-    </div>
+            <p className="alert-body">{a.body}</p>
+          </div>
+          <span className="alert-time">{timeAgo(a.time)}</span>
+        </div>
+      ))}
+    </Page>
   );
 }
 
-// ─── Admin Controls ───────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// ADMIN CONTROLS
+// ─────────────────────────────────────────────────────────────────────────────
 function AdminControls({ toast }) {
-  const [restaurants, setRestaurants] = useState([]);
+  const [rests, setRests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(null);
 
   const load = useCallback(async () => {
     try {
-      const rests = await get("restaurants", "select=id,name,is_operational,theme,currency,created_at");
-      setRestaurants(rests);
+      const r = await get("restaurants", "select=id,name,is_operational,theme,currency,created_at");
+      setRests(r);
     } catch (e) { toast(e.message, "error"); }
     setLoading(false);
   }, [toast]);
@@ -1217,46 +985,39 @@ function AdminControls({ toast }) {
     setSaving(r.id);
     try {
       await patch("restaurants", `id=eq.${r.id}`, { is_operational: !r.is_operational });
-      toast(`${r.name} ${r.is_operational ? "suspended" : "reactivated"}`, "success");
+      toast(`${r.name} ${r.is_operational?"suspended":"reactivated"}`, "success");
       load();
     } catch (e) { toast(e.message, "error"); }
     setSaving(null);
   }, [toast, load]);
 
-  const handleExport = useCallback(() => {
-    const blob = new Blob([JSON.stringify(restaurants, null, 2)], { type: "application/json" });
+  const exportJSON = useCallback(() => {
+    const blob = new Blob([JSON.stringify(rests, null, 2)], { type:"application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = "orbitdine_restaurants.json";
     a.click();
     toast("Exported!", "success");
-  }, [restaurants, toast]);
+  }, [rests, toast]);
 
   if (loading) return <Loader />;
 
   return (
-    <div className="space-y-5 animate-fade-up">
-      <div>
-        <h1 className="text-xl font-bold text-[#F0F0FF]">Admin Controls</h1>
-        <p className="text-xs text-[#6B6B9A]">Platform-wide management and controls</p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="glass rounded-2xl p-5 space-y-4">
-          <h2 className="text-sm font-bold text-[#F0F0FF]">Restaurant Status Control</h2>
-          <div className="space-y-2 overflow-y-auto" style={{ maxHeight: "60vh" }}>
-            {restaurants.map((r) => (
-              <div key={r.id} className="flex items-center justify-between px-4 py-3 bg-white/[0.03] rounded-xl border border-white/[0.05] hover:bg-white/[0.06] transition-all">
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-[#F0F0FF] truncate">{r.name}</p>
-                  <p className="text-[10px] text-[#6B6B9A] font-mono">{r.id.slice(0, 16)}…</p>
+    <Page title="Admin Controls" sub="Platform-wide management">
+      <div className="grid-2">
+        <div className="card">
+          <p style={{ fontSize:13, fontWeight:700, fontFamily:"Syne,sans-serif", color:"var(--text)", marginBottom:14 }}>Restaurant Status Control</p>
+          <div className="section-rows" style={{ maxHeight:"60vh", overflowY:"auto" }}>
+            {rests.map(r => (
+              <div key={r.id} className="row-item">
+                <div style={{ minWidth:0 }}>
+                  <p style={{ fontSize:13, fontWeight:600, color:"var(--text)" }} className="truncate">{r.name}</p>
+                  <p className="mono" style={{ marginTop:2, fontSize:10 }}>{r.id.slice(0,18)}…</p>
                 </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <Badge color={r.is_operational ? "green" : "red"}>{r.is_operational ? "Active" : "Off"}</Badge>
-                  <button onClick={() => toggle(r)} disabled={saving === r.id}
-                    className={cn("px-3 py-1.5 rounded-lg text-xs font-bold border transition-all disabled:opacity-50",
-                      r.is_operational ? "bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20" : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20")}>
-                    {saving === r.id ? "…" : r.is_operational ? "Suspend" : "Enable"}
+                <div style={{ display:"flex", alignItems:"center", gap:8, flexShrink:0 }}>
+                  <Badge color={r.is_operational?"green":"red"}>{r.is_operational?"Active":"Off"}</Badge>
+                  <button className={"btn " + (r.is_operational ? "danger" : "success")} disabled={saving===r.id} onClick={() => toggle(r)}>
+                    {saving===r.id ? "…" : r.is_operational ? "Suspend" : "Enable"}
                   </button>
                 </div>
               </div>
@@ -1264,165 +1025,146 @@ function AdminControls({ toast }) {
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="glass rounded-2xl p-5 space-y-3">
-            <h2 className="text-sm font-bold text-[#F0F0FF]">Platform Overview</h2>
-            <div className="grid grid-cols-2 gap-2">
+        <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+          <div className="card">
+            <p style={{ fontSize:13, fontWeight:700, fontFamily:"Syne,sans-serif", color:"var(--text)", marginBottom:14 }}>Platform Overview</p>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:10 }}>
               {[
-                { label: "Total Restaurants", value: restaurants.length },
-                { label: "Active", value: restaurants.filter((r) => r.is_operational).length },
-                { label: "Suspended", value: restaurants.filter((r) => !r.is_operational).length },
-                { label: "Themes Used", value: new Set(restaurants.map((r) => r.theme)).size },
-              ].map((s) => (
-                <div key={s.label} className="bg-white/[0.03] rounded-xl p-3 border border-white/[0.05]">
-                  <p className="text-xl font-bold text-[#F0F0FF]">{s.value}</p>
-                  <p className="text-[10px] text-[#6B6B9A] mt-0.5">{s.label}</p>
+                { label:"Total", val: rests.length },
+                { label:"Active", val: rests.filter(r=>r.is_operational).length },
+                { label:"Suspended", val: rests.filter(r=>!r.is_operational).length },
+                { label:"Themes", val: new Set(rests.map(r=>r.theme)).size },
+              ].map(s => (
+                <div key={s.label} className="mini-stat">
+                  <div className="mini-stat-val">{s.val}</div>
+                  <div className="mini-stat-label">{s.label}</div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="glass rounded-2xl p-5 space-y-3 border border-amber-500/10">
-            <div className="flex items-center gap-2">
-              <span className="text-amber-400">{icons.alerts}</span>
-              <h2 className="text-sm font-bold text-[#F0F0FF]">Quick Actions</h2>
-            </div>
-            <div className="space-y-2">
-              <button onClick={() => { load(); toast("Data refreshed", "success"); }}
-                className="w-full flex items-center justify-between px-4 py-3 bg-white/[0.03] hover:bg-white/[0.07] rounded-xl border border-white/[0.05] transition-all text-left">
-                <div>
-                  <p className="text-sm font-semibold text-[#F0F0FF]">Refresh All Data</p>
-                  <p className="text-xs text-[#6B6B9A]">Pull latest from Supabase</p>
-                </div>
-                <span className="text-[#6B6B9A]">{icons.zap}</span>
-              </button>
-              <button onClick={handleExport}
-                className="w-full flex items-center justify-between px-4 py-3 bg-white/[0.03] hover:bg-white/[0.07] rounded-xl border border-white/[0.05] transition-all text-left">
-                <div>
-                  <p className="text-sm font-semibold text-[#F0F0FF]">Export Restaurant List</p>
-                  <p className="text-xs text-[#6B6B9A]">Download as JSON</p>
-                </div>
-                <span className="text-[#6B6B9A]">{icons.zap}</span>
-              </button>
+          <div className="card">
+            <p style={{ fontSize:13, fontWeight:700, fontFamily:"Syne,sans-serif", color:"var(--text)", marginBottom:12 }}>Quick Actions</p>
+            <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+              {[
+                { label:"Refresh All Data", sub:"Pull latest from Supabase", action:()=>{ load(); toast("Refreshed","success"); } },
+                { label:"Export Restaurant List", sub:"Download as JSON", action: exportJSON },
+              ].map(a => (
+                <button key={a.label} onClick={a.action}
+                  style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 14px", background:"var(--surface2)", border:"1px solid var(--border)", borderRadius:"var(--r)", cursor:"pointer", textAlign:"left", transition:"all 0.15s" }}
+                  onMouseOver={e=>e.currentTarget.style.borderColor="var(--border2)"}
+                  onMouseOut={e=>e.currentTarget.style.borderColor="var(--border)"}>
+                  <div>
+                    <p style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>{a.label}</p>
+                    <p style={{ fontSize:11, color:"var(--text3)", marginTop:1 }}>{a.sub}</p>
+                  </div>
+                  <span style={{ color:"var(--accent)" }}>{Icons.zap}</span>
+                </button>
+              ))}
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </Page>
   );
 }
 
-// ─── Nav ──────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// NAV + APP SHELL
+// ─────────────────────────────────────────────────────────────────────────────
 const NAV = [
-  { id: "dashboard", label: "Overview", icon: "dashboard" },
-  { id: "restaurants", label: "Restaurants", icon: "restaurants" },
-  { id: "orders", label: "Live Orders", icon: "orders" },
-  { id: "payments", label: "Payments", icon: "payments" },
-  { id: "feedback", label: "Feedback", icon: "feedback" },
-  { id: "qr", label: "QR Health", icon: "qr" },
-  { id: "alerts", label: "Alerts", icon: "alerts" },
-  { id: "controls", label: "Admin Controls", icon: "settings" },
+  { id:"dashboard",   label:"Overview",       icon:"dashboard"   },
+  { id:"restaurants", label:"Restaurants",    icon:"restaurants" },
+  { id:"orders",      label:"Live Orders",    icon:"orders"      },
+  { id:"payments",    label:"Payments",       icon:"payments"    },
+  { id:"feedback",    label:"Feedback",       icon:"feedback"    },
+  { id:"qr",          label:"QR Health",      icon:"qr"          },
+  { id:"alerts",      label:"Alerts",         icon:"alerts"      },
+  { id:"controls",    label:"Admin Controls", icon:"settings"    },
 ];
 
-// ─── App ──────────────────────────────────────────────────────────────────────
 export default function App() {
   const [section, setSection] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { toasts, toast } = useToasts();
 
-  const renderSection = () => {
+  const current = NAV.find(n => n.id === section);
+
+  function renderSection() {
     switch (section) {
-      case "dashboard": return <Dashboard />;
+      case "dashboard":   return <Dashboard />;
       case "restaurants": return <Restaurants toast={toast} />;
-      case "orders": return <OrdersMonitor toast={toast} />;
-      case "payments": return <Payments toast={toast} />;
-      case "feedback": return <FeedbackDashboard toast={toast} />;
-      case "qr": return <QRHealth toast={toast} />;
-      case "alerts": return <Alerts toast={toast} />;
-      case "controls": return <AdminControls toast={toast} />;
-      default: return <Dashboard />;
+      case "orders":      return <LiveOrders toast={toast} />;
+      case "payments":    return <Payments toast={toast} />;
+      case "feedback":    return <FeedbackView toast={toast} />;
+      case "qr":          return <QRHealth toast={toast} />;
+      case "alerts":      return <AlertsView toast={toast} />;
+      case "controls":    return <AdminControls toast={toast} />;
+      default:            return <Dashboard />;
     }
-  };
+  }
 
   return (
-    <div className="min-h-screen flex bg-[#07070F] text-[#F0F0FF]" style={{ fontFamily: "'Manrope', sans-serif" }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
-        * { box-sizing: border-box; }
-        body { margin: 0; background: #07070F; }
-        .glass { background: rgba(255,255,255,0.035); backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,0.07); }
-        .font-mono { font-family: 'JetBrains Mono', monospace; }
-        @keyframes fade-up { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes slide-right { from { opacity:0; transform:translateX(16px); } to { opacity:1; transform:translateX(0); } }
-        @keyframes fade-in { from { opacity:0; } to { opacity:1; } }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .animate-fade-up { animation: fade-up 0.4s cubic-bezier(0.16,1,0.3,1) both; }
-        .animate-slide-right { animation: slide-right 0.35s cubic-bezier(0.16,1,0.3,1) both; }
-        .animate-fade-in { animation: fade-in 0.3s ease both; }
-        .animate-spin { animation: spin 0.8s linear infinite; }
-        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
-        .animate-pulse { animation: pulse 2s ease-in-out infinite; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
-      `}</style>
+    <div className="layout">
+      {/* Mobile overlay */}
+      <div className={"overlay" + (sidebarOpen?" show":"")} onClick={() => setSidebarOpen(false)} />
 
-      {sidebarOpen && <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
-
-      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-56 bg-[#0A0A14] border-r border-white/[0.05] flex flex-col transition-transform lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
-        <div className="px-5 py-5 border-b border-white/[0.05]">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-orange-500/20 border border-orange-500/25 flex items-center justify-center">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2" className="w-4 h-4">
-                <circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" />
+      {/* Sidebar */}
+      <aside className={"sidebar" + (sidebarOpen?" open":"")}>
+        <div className="sidebar-logo">
+          <div className="logo-mark">
+            <div className="logo-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5">
+                <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
               </svg>
             </div>
             <div>
-              <p className="text-sm font-bold text-[#F0F0FF]">OrbitDine</p>
-              <p className="text-[9px] text-orange-400 font-bold uppercase tracking-wider">Super Admin</p>
+              <div className="logo-text">OrbitDine</div>
+              <div className="logo-sub">Super Admin</div>
             </div>
           </div>
         </div>
 
-        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-          {NAV.map((item) => (
-            <button key={item.id} onClick={() => { setSection(item.id); setSidebarOpen(false); }}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left ${section === item.id ? "bg-orange-500/15 text-orange-400 border border-orange-500/20" : "text-[#6B6B9A] hover:bg-white/[0.04] hover:text-[#C0C0E0]"}`}>
-              <span className="shrink-0">{icons[item.icon]}</span>
+        <nav className="sidebar-nav">
+          {NAV.map(item => (
+            <button key={item.id} className={"nav-item" + (section===item.id?" active":"")}
+              onClick={() => { setSection(item.id); setSidebarOpen(false); }}>
+              {Icons[item.icon]}
               {item.label}
             </button>
           ))}
         </nav>
 
-        <div className="px-4 pb-5 border-t border-white/[0.05] pt-4">
-          <div className="flex items-center gap-2 px-3 py-2">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-orange-500/30 to-indigo-500/30 border border-white/10 flex items-center justify-center text-[10px] font-bold">SA</div>
+        <div className="sidebar-footer">
+          <div className="admin-chip">
+            <div className="admin-avatar">SA</div>
             <div>
-              <p className="text-xs font-semibold text-[#E0E0F0]">Super Admin</p>
-              <p className="text-[9px] text-[#4A4A6A]">Full Access</p>
+              <div className="admin-name">Super Admin</div>
+              <div className="admin-role">Full Access</div>
             </div>
           </div>
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="h-14 px-4 lg:px-6 flex items-center justify-between border-b border-white/[0.05] bg-[#07070F]/80 backdrop-blur-xl shrink-0">
-          <div className="flex items-center gap-3">
-            <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 text-[#6B6B9A] hover:text-white hover:bg-white/[0.05] rounded-lg">
-              {icons.menu}
-            </button>
-            <p className="text-sm text-[#6B6B9A] hidden sm:block">{NAV.find((n) => n.id === section)?.label}</p>
+      {/* Main area */}
+      <div className="main">
+        <header className="topbar">
+          <div className="topbar-left">
+            <button className="mobile-toggle" onClick={() => setSidebarOpen(true)}>{Icons.menu}</button>
+            <span className="breadcrumb">{current?.label}</span>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <div className="topbar-right">
+            <div className="live-pill">
+              <span className="live-dot" />
               Live
             </div>
-            <p className="text-xs text-[#4A4A6A] hidden sm:block">{new Date().toLocaleString("en-IN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+            <span className="topbar-time">
+              {new Date().toLocaleString("en-IN", { month:"short", day:"numeric", hour:"2-digit", minute:"2-digit" })}
+            </span>
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto p-4 lg:p-6">
+        <main className="content">
           {renderSection()}
         </main>
       </div>
